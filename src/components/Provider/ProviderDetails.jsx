@@ -77,7 +77,7 @@ const ProviderDetails = () => {
   // Constants and derived values
   const isLoggedIn = useIsLogin(); // Reactive hook - automatically updates when login state changes
   const isShare = router.query.share;
-  const limit = 5;
+  const limit = 100;
   const storedServicesLoad = slug ? providerServicesLoadMap?.[slug] : 0;
   const [targetServicesCount, setTargetServicesCount] = useState(limit);
 
