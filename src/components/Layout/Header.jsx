@@ -303,7 +303,7 @@ const Header = () => {
         <TopHeader />
 
         {/* Main header */}
-        <div className="safari-header w-full card_bg py-4 px-4 flex justify-between items-center flex-wrap md:flex-nowrap h-16 md:h-max">
+        <div className="safari-header w-full card_bg py-1 px-1 flex justify-between items-center flex-wrap md:flex-nowrap h-16 md:h-max">
           <div className="container mx-auto flex justify-between items-center">
             <CustomLink href="/" title={t("home")} className="relative">
               <CustomImageTag

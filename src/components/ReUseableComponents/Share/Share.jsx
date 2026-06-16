@@ -175,12 +175,12 @@ const Share = ({ title }) => {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <button
-          className="card_bg dark:light_bg_color p-2 rounded-sm"
+          className="card_bg dark:light_bg_color p-2.5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 hover:shadow-md transition-all"
           onClick={() => isMobile && setOpen(!open)}
           onMouseEnter={() => !isMobile && setOpen(true)}
           onMouseLeave={() => !isMobile && setOpen(false)}
         >
-          <CiShare2 size={24} />
+          <CiShare2 size={22} />
         </button>
       </PopoverTrigger>
       <PopoverContent
