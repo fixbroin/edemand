@@ -23,7 +23,7 @@ const StickyCartContinueButton = () => {
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 w-full px-4 py-3 bg-white/95 dark:bg-[#0F0F0F]/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 shadow-[0_-4px_15px_rgba(0,0,0,0.05)] z-50 animate-in slide-in-from-bottom-5 duration-300">
+    <div className="fixed bottom-0 left-0 right-0 w-full px-1 py-1 bg-white/95 dark:bg-[#0F0F0F]/95 backdrop-blur-md border-t border-gray-200 dark:border-gray-800 shadow-[0_-4px_15px_rgba(0,0,0,0.05)] z-50 animate-in slide-in-from-bottom-5 duration-300">
       <div className="flex items-center justify-between w-full max-w-screen-xl mx-auto container">
         <div className="flex flex-col">
           <span className="font-bold text-xl text_color leading-none">

@@ -699,52 +699,44 @@ const ProviderServiceDetails = () => {
                   )}
                 </div>
 
-                <div className="flex items-center gap-8 mt-7">
+                <div className="flex items-center justify-between gap-4 mt-7 w-full">
                   {serviceData?.discounted_price > 0 ? (
-                    <div className="flex flex-col gap-1">
-                      <span className="text-base sm:text-[28px] font-semibold">
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      <span className="text-xl sm:text-[28px] font-semibold text_color">
                         {showPrice(serviceData?.price_with_tax)}
                       </span>
-                      <span className="text-xs sm:text-lg primary_text_color line-through">
+                      <span className="text-sm sm:text-lg description_color line-through">
                         {showPrice(serviceData?.original_price_with_tax)}
                       </span>
                     </div>
                   ) : (
-                    <span className="primary_text_color text-base sm:text-[28px] font-semibold">
+                    <span className="text-xl sm:text-[28px] font-semibold text_color">
                       {showPrice(serviceData?.price_with_tax)}
                     </span>
                   )}
                   {serviceData?.id && qty[serviceData.id] > 0 ? (
-                    <button className="px-4 py-2 mt-2 text-xs sm:text-sm font-medium light_bg_color primary_text_color rounded-md overflow-hidden w-full xl:w-fit">
-                      <span className="flex items-center justify-between gap-6">
+                    <button className="px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base font-semibold light_bg_color primary_text_color rounded-xl overflow-hidden min-w-[100px] sm:min-w-[140px] flex-shrink-0">
+                      <span className="flex items-center justify-between gap-4 sm:gap-6">
                         {qty[serviceData.id] > 1 ? (
-                          <span
-                            onClick={() => handleRemoveQuantity(serviceData.id)}
-                          >
-                            <FaMinus />
+                          <span onClick={() => handleRemoveQuantity(serviceData.id)}>
+                            <FaMinus className="w-3 h-3 sm:w-4 sm:h-4" />
                           </span>
                         ) : (
-                          <span
-                            onClick={() => handleRemoveItem(serviceData.id)}
-                          >
-                            <FaTrash size={16} />
+                          <span onClick={() => handleRemoveItem(serviceData.id)}>
+                            <FaTrash className="w-3 h-3 sm:w-4 sm:h-4" />
                           </span>
                         )}
-                        <span
-                          className={`relative ${animationClass[serviceData.id]
-                            } transition-transform duration-300`}
-                        >
+                        <span className={`relative ${animationClass[serviceData.id]} transition-transform duration-300`}>
                           {qty[serviceData.id]}
                         </span>
                         <span onClick={() => handleAddQuantity(serviceData.id)}>
-                          <FaPlus />
+                          <FaPlus className="w-3 h-3 sm:w-4 sm:h-4" />
                         </span>
                       </span>
                     </button>
                   ) : (
                     <button
-                      className="w-full xl:w-fit px-4 py-2 mt-2 text-xs sm:text-sm font-medium light_bg_color primary_text_color rounded-md
-                      disabled:opacity-50"
+                      className="px-5 sm:px-8 py-2.5 sm:py-3 text-sm sm:text-base font-semibold light_bg_color primary_text_color rounded-xl min-w-[100px] sm:min-w-[140px] flex-shrink-0 disabled:opacity-50"
                       onClick={(e) => handleAddToCart(e, serviceData)}
                       disabled={Number(serviceData?.is_Available_at_location) === 0}
                     >
