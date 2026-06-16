@@ -50,7 +50,7 @@ const HomeCategories = ({ categoriesData }) => {
   const displayedCategories = showAll ? categoriesData : categoriesData.slice(0, itemsLimit);
 
   return (
-    <div className="categories light_bg_color pt-8 pb-12 homeCategories">
+    <div className="categories light_bg_color pt-4 pb-12 homeCategories">
       <div className="container mx-auto px-4 md:px-8">
         <CommanHeadline
           headline={t("chooseYourService")}

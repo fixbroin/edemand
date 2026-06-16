@@ -319,8 +319,9 @@ const ProviderAboutTab = ({ providerData }) => {
         </div>
       </div>
 
-      {/* Contact Us */}
-      {providerData?.latitude && providerData?.longitude && providerData?.address && (
+      {/* Contact Us / Location */}
+      {/* Note: Hidden as per request. If admin panel adds a flag like show_location or hide_address, it can be added here. Currently forcing it to be hidden by prepending 'false &&' */}
+      {false && providerData?.latitude && providerData?.longitude && providerData?.address && (
         <div>
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
             {t("contactUs")}
