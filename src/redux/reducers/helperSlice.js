@@ -27,6 +27,7 @@ const initialState = {
   bookingStatus: "all",
   chatData: null,
   loginModalOpen: false,
+  sidebarOpen: false,
   pages: {
     blogs: { ...defaultBlogState },
     providers: { ...defaultProvidersState },
@@ -165,6 +166,15 @@ const helperSlice = createSlice({
     closeLoginModal: (state) => {
       state.loginModalOpen = false;
     },
+    openSidebar: (state) => {
+      state.sidebarOpen = true;
+    },
+    closeSidebar: (state) => {
+      state.sidebarOpen = false;
+    },
+    setSidebarOpen: (state, action) => {
+      state.sidebarOpen = action.payload;
+    },
   },
 });
 
@@ -185,6 +195,9 @@ export const {
   clearServiceReviewsLoad,
   openLoginModal,
   closeLoginModal,
+  openSidebar,
+  closeSidebar,
+  setSidebarOpen,
 } = helperSlice.actions;
 
 export const getChatData = (data) => {
@@ -218,3 +231,5 @@ export const selectServiceReviewsLoadMap = (state) =>
   state.helper?.pages?.serviceReviews || { ...defaultServiceReviewsState };
 
 export const selectLoginModalOpen = (state) => state.helper?.loginModalOpen || false;
+
+export const selectSidebarOpen = (state) => state.helper?.sidebarOpen || false;

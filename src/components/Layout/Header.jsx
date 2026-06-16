@@ -10,7 +10,7 @@ import {
   Suspense,
 } from "react";
 import { FaBars, FaShoppingCart } from "react-icons/fa";
-import { IoLocationSharp } from "react-icons/io5";
+import { IoLocationOutline, IoSearchOutline } from "react-icons/io5";
 import { logoutApi, getLanguageJsonDataApi, updateFcmApi } from "@/api/apiRoutes";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useCart } from "@/hooks/useCart";
@@ -25,6 +25,7 @@ import CartDialog from "../ReUseableComponents/Dialogs/CartDialog";
 import { usePathname } from "next/navigation";
 import AccountDialog from "../ReUseableComponents/Dialogs/AccountDialog";
 import LocationModal from "../ReUseableComponents/LocationModal";
+import SearchDialog from "../ReUseableComponents/Dialogs/SearchDialog";
 import { useRouter } from "next/router";
 import { useTranslation } from "./TranslationContext";
 import { selectReorderMode } from "@/redux/reducers/reorderSlice";
@@ -45,7 +46,7 @@ import { AUTH_EVENTS } from "@/constants/clarityEventNames";
 import LoginModal from "../auth/LoginModal/LoginModal";
 import { getNavigationItems } from "./navigationConfig";
 import NavLink from "./NavLink";
-import { selectLoginModalOpen, openLoginModal, closeLoginModal } from "@/redux/reducers/helperSlice";
+import { selectLoginModalOpen, openLoginModal, closeLoginModal, selectSidebarOpen, setSidebarOpen } from "@/redux/reducers/helperSlice";
 import SetPasswordModal from "../auth/SetPasswordModal";
 // Lazy load sidebar content for better performance
 const SidebarContent = lazy(() => import("./SidebarContent"));
@@ -65,17 +66,17 @@ const Header = () => {
   // Get FCM token from userDataSlice (not settingsData)
   const fcmToken = useSelector((state) => state?.userData?.fcmToken);
   const isLoggedIn = useIsLogin(); // Reactive hook - automatically updates when login state changes
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const isDrawerOpen = useSelector(selectSidebarOpen);
+  const setIsDrawerOpen = (isOpen) => dispatch(setSidebarOpen(isOpen));
   const isLoginModalOpen = useSelector(selectLoginModalOpen);
   const [isRegisterAsProviderModalOpen, setRegisterAsProviderModalIsOpen] =
     useState(false);
-  const [cartVisibleDeskTop, setCartVisibleDeskTop] = useState(false);
-  const [cartVisibleMobile, setCartVisibleMobile] = useState(false);
   const [accountVisible, setAccountVisible] = useState(false);
   const [openLogoutDialog, setOpenLogoutDialog] = useState(false);
   const [openProfileModal, setOpenProfileModal] = useState(false);
   const [openSetPasswordModal, setOpenSetPasswordModal] = useState(false);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
 
   const isRegisterAsProviderAllow =
     websettings?.register_provider_from_web_setting_status === 1;
@@ -119,10 +120,6 @@ const Header = () => {
   const handleOpenRegisterAsProviderModal = () => {
     setRegisterAsProviderModalIsOpen(true);
     setIsDrawerOpen(false);
-  };
-
-  const toggleDrawer = () => {
-    setIsDrawerOpen(!isDrawerOpen);
   };
 
   const fcmId = userData?.web_fcm_id;
@@ -292,6 +289,13 @@ const Header = () => {
     return getNavigationItems(hasLatLong);
   }, [hasLatLong]);
 
+  useEffect(() => {
+    // Auto-trigger location modal if no location is selected and we're on the home page
+    if (router.isReady && (pathName === "/" || pathName === "/home") && !hasLatLong) {
+      setIsLocationModalOpen(true);
+    }
+  }, [router.isReady, pathName, hasLatLong]);
+
   return (
     <header className="w-full sticky top-0 z-50 card_bg !border-b !border-[var(--neutral-bg)] dark:!border-none shadow-[0px_15px_47px_0px_rgba(0,0,0,0.04)]">
       <div>
@@ -301,18 +305,37 @@ const Header = () => {
         {/* Main header */}
         <div className="safari-header w-full card_bg py-4 px-4 flex justify-between items-center flex-wrap md:flex-nowrap h-16 md:h-max">
           <div className="container mx-auto flex justify-between items-center">
-            <CustomLink href={hasLatLong ? "/" : "/home"} title={t("home")} className="relative">
+            <CustomLink href="/" title={t("home")} className="relative">
               <CustomImageTag
                 src={isDarkMode ? websettings?.footer_logo : websettings?.web_logo}
                 alt={t("logo")}
-                className="h-[40px] md:h-[60px] aspect-logo max-w-[220px] safari-logo"
+                className="h-[40px] md:h-[60px] aspect-logo max-w-[220px] object-contain safari-logo"
               />
             </CustomLink>
 
+            {/* Location Section - Moved here to be after logo */}
+            <div
+              className="flex items-center gap-2 cursor-pointer bg-gray-100 dark:bg-gray-800 p-2 rounded-lg max-w-[150px] md:max-w-[250px] ml-4"
+              onClick={() => setIsLocationModalOpen(true)}
+            >
+              <IoLocationOutline size={20} className="primary_text_color min-w-[20px]" />
+              <span className="truncate text-sm font-medium">
+                {hasLatLong && locationData?.locationAddress
+                  ? locationData.locationAddress
+                  : t("addLocation")}
+              </span>
+            </div>
 
+            {/* Search Icon - Right after location in mobile/tablet */}
+            <div 
+              className="flex xl:hidden items-center ml-4 cursor-pointer p-2 light_bg_color hover:primary_bg_color group rounded-lg transition-all duration-300"
+              onClick={() => setIsSearchModalOpen(true)}
+            >
+              <IoSearchOutline size={20} className="primary_text_color group-hover:text-white transition-colors duration-300" />
+            </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden xl:flex gap-6 text_color">
+            <nav className="hidden xl:flex gap-6 text_color items-center">
               {navigationItems.map((item) => (
                 <NavLink
                   key={item.key}
@@ -322,24 +345,16 @@ const Header = () => {
                   title={t(item.labelKey)}
                 />
               ))}
+              {/* Desktop Search Icon - After navigation items */}
+              <div 
+                className="cursor-pointer p-2 light_bg_color hover:primary_bg_color group rounded-full transition-all duration-300"
+                onClick={() => setIsSearchModalOpen(true)}
+              >
+                <IoSearchOutline size={22} className="primary_text_color group-hover:text-white transition-colors duration-300" />
+              </div>
             </nav>
 
             <div className="hidden xl:flex items-center gap-4">
-              {/* Location Display/Action - Only on non-landing pages */}
-              {!((pathName === "/" || pathName === "/home")) && (
-                <div
-                  className="hidden md:flex items-center gap-2 cursor-pointer bg-gray-100 dark:bg-gray-800 p-2 rounded-lg max-w-[200px]"
-                  onClick={() => setIsLocationModalOpen(true)}
-                >
-                  <IoLocationSharp size={20} className="primary_text_color min-w-[20px]" />
-                  <span className="truncate text-sm font-medium">
-                    {hasLatLong && locationData?.locationAddress
-                      ? locationData.locationAddress
-                      : t("addLocation")}
-                  </span>
-                </div>
-              )}
-
               {isLoggedIn ? (
                 <div
                   className={`flex items-center space-x-4 ${isRTL ? "space-x-reverse" : ""
@@ -356,11 +371,7 @@ const Header = () => {
                   {/* Cart Dialog - Single Instance */}
                   {!isCheckoutPage && !isCartPage && hasLatLong && (
                     <div className="relative">
-                      <CartDialog
-                        totalItems={totalItems}
-                        isVisible={cartVisibleDeskTop}
-                        onOpenChange={setCartVisibleDeskTop}
-                      />
+                      <CartDialog />
                     </div>
                   )}
                   <div className="relative">
@@ -393,7 +404,7 @@ const Header = () => {
               )}
             </div>
 
-            {/* Hamburger / Close Icon */}
+            {/* Hamburger / Close Icon - REMOVED and moved to BottomNavigation */}
             <div className="flex items-center gap-4 md:hidden">
               {isLoggedIn && !isCheckoutPage && !isCartPage && (
                 <CustomLink href={"/cart"}>
@@ -410,24 +421,6 @@ const Header = () => {
                   </div>
                 </CustomLink>
               )}
-
-              <button
-                className="relative w-6 h-5 flex flex-col justify-between md:hidden"
-                onClick={() => handleMobileNav()}
-              >
-                <span
-                  className={`block h-[2px] w-6 bg-black dark:bg-white rounded transition-transform duration-300 ${isDrawerOpen ? "rotate-45 translate-y-[8px]" : ""
-                    }`}
-                ></span>
-                <span
-                  className={`block h-[2px] w-6 bg-black dark:bg-white rounded transition-opacity duration-300 ${isDrawerOpen ? "opacity-0" : "opacity-100"
-                    }`}
-                ></span>
-                <span
-                  className={`block h-[2px] w-6 bg-black dark:bg-white rounded transition-transform duration-300 ${isDrawerOpen ? "-rotate-45 -translate-y-2.5" : ""
-                    }`}
-                ></span>
-              </button>
             </div>
 
             {/* Mobile Navigation Toggle */}
@@ -435,11 +428,7 @@ const Header = () => {
             <div className="hidden xl:hidden md:flex items-center space-x-4">
               {isLoggedIn && !isCheckoutPage && !isCartPage && hasLatLong && (
                 <div className={`relative ${isRTL ? "ml-2" : ""}`}>
-                  <CartDialog
-                    totalItems={totalItems}
-                    isVisible={cartVisibleMobile}
-                    onOpenChange={setCartVisibleMobile}
-                  />
+                  <CartDialog />
                 </div>
               )}
               <Sheet
@@ -447,14 +436,6 @@ const Header = () => {
                 onOpenChange={setIsDrawerOpen}
                 side={isRTL ? "left" : "right"}
               >
-                <SheetTrigger asChild>
-                  <button
-                    className="description_color dark:text-white"
-                    onClick={toggleDrawer}
-                  >
-                    <FaBars size={24} />
-                  </button>
-                </SheetTrigger>
                 {/* Drawer Content - Opens from Right */}
                 <SheetContent className="w-[85%] sm:w-[350px] p-0">
                   <Suspense
@@ -579,6 +560,15 @@ const Header = () => {
             }
             redirectToHome={false}
             forceChooseAddressOnOpen={true}
+          />
+        )
+      }
+
+      {
+        isSearchModalOpen && (
+          <SearchDialog
+            isOpen={isSearchModalOpen}
+            onClose={() => setIsSearchModalOpen(false)}
           />
         )
       }

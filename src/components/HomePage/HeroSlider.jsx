@@ -4,16 +4,14 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { IoLocationOutline, IoSearchOutline } from "react-icons/io5";
+import { IoSearchOutline } from "react-icons/io5";
 import { useRouter } from "next/router";
 import { useSelector } from "react-redux";
 import { convertToSlug, useRTL } from "@/utils/Helper";
-import { FiChevronRight } from "react-icons/fi";
 import { logClarityEvent } from "@/utils/clarityEvents";
 import { HOME_EVENTS } from "@/constants/clarityEventNames";
 
 import CustomImageTag from "../ReUseableComponents/CustomImageTag";
-import LocationModal from "../ReUseableComponents/LocationModal";
 import { toast } from "sonner";
 import { useTranslation } from "../Layout/TranslationContext";
 
@@ -85,22 +83,21 @@ const CustomPagination = ({ totalSlides, currentSlide, goToSlide, isRTL, isPause
   }, [currentSlide, isPaused]);
 
   return (
-    <div className="absolute bottom-24 md:bottom-24 left-1/2 transform -translate-x-1/2 flex z-10 bg-white dark:bg-[var(--hover-dark-bg)] p-2 rounded-full">
+    <div className="flex justify-center z-10 bg-white dark:bg-[var(--hover-dark-bg)] p-1 px-2 md:p-2 rounded-full w-fit mx-auto mt-4 border border_color">
       {Array.from({ length: totalSlides }).map((_, index) => (
         <button
           key={index}
           onClick={() => goToSlide(index)}
-          className={`rounded-full transition-all relative overflow-hidden light_bg_color border border-[var(--slider-dot-border)] ${index === currentSlide ? "w-6 h-3" : "w-3 h-3"
-            } ${isRTL ? "ml-2" : "mr-2"} last:m-0`}
+          className={`rounded-full transition-all relative overflow-hidden light_bg_color border border-[var(--slider-dot-border)] ${index === currentSlide ? "w-4 h-1.5 md:w-6 md:h-3" : "w-1.5 h-1.5 md:w-3 md:h-3"
+            } ${isRTL ? "ml-1 md:ml-2" : "mr-1 md:mr-2"} last:m-0`}
           aria-label={`Go to slide ${index + 1}`}
         >
           {index === currentSlide && (
             <div
-              className="absolute bottom-0 primary_bg_color border border_color"
+              className="absolute bottom-0 primary_bg_color border border_color h-[6px] md:h-[12px]"
               style={{
                 [isRTL ? "right" : "left"]: "0",
                 width: `${progress}%`,
-                height: "12px",
                 opacity: opacity,
                 transition: "width 0.1s ease-in-out, opacity 0.1s ease-in-out",
                 transform: isRTL ? "scaleX(-1)" : "none"
@@ -119,10 +116,7 @@ const HeroSlider = ({ sliderData }) => {
   const locationData = useSelector((state) => state.location);
   const swiperRef = useRef(null);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const [isPaused, setIsPaused] = useState(false);
-  const handleClose = () => setIsModalOpen(false);
 
   const handleSlideChange = (swiper) => {
     let newIndex = swiper.realIndex; // `realIndex` gives the actual slide index in loop mode
@@ -181,22 +175,6 @@ const HeroSlider = ({ sliderData }) => {
     }
   };
 
-  const handleSearchServiceOrProvider = () => {
-    if (!searchQuery.trim()) {
-      // Show a toast error when search query is empty
-      toast.error(t("pleaseTypeServiceOrProviderName"));
-      return; // Exit the function
-    }
-
-    const slug = convertToSlug(searchQuery); // Convert the search query to a slug
-
-    // Navigate to the search page
-    router.push(`/search/${slug}`);
-    logClarityEvent(HOME_EVENTS.SERVICE_SEARCH_SUBMITTED, {
-      query_length: searchQuery.trim().length,
-    });
-  };
-
   useEffect(() => {
     const swiperInstance = swiperRef.current;
 
@@ -224,15 +202,15 @@ const HeroSlider = ({ sliderData }) => {
   }, []);
   const isSliderData = sliderData && sliderData?.length > 0
   return (
-    <div className={`relative ${isSliderData ? "md:pb-16" : ""} heroSliderSection`}>
+    <div className={`relative ${isSliderData ? "md:pb-16" : ""} heroSliderSection pb-0`}>
       <div className={`relative w-full group ${isSliderData
         ? "aspect-slider"
-        : "h-full my-10"
+        : "h-0"
         }`}>
         {isSliderData ? (
           <>
             <Swiper
-              modules={[Autoplay, Navigation, Pagination]}
+              modules={[Autoplay, Navigation]}
               spaceBetween={0}
               slidesPerView={1}
               dir={isRTL ? "rtl" : "ltr"}
@@ -249,7 +227,6 @@ const HeroSlider = ({ sliderData }) => {
                 pauseOnMouseEnter: false,
                 waitForTransition: true,
               }}
-              pagination={{ clickable: true }}
               className="h-full w-full"
               onSwiper={(swiper) => {
                 swiperRef.current = swiper;
@@ -264,8 +241,8 @@ const HeroSlider = ({ sliderData }) => {
                   <CustomImageTag
                     alt={t("sliderImage")}
                     src={slide?.slider_web_image}
-                    className="w-full h-full object-contain"
-                    imgClassName="object-contain"
+                    className="w-full h-full object-cover md:object-contain"
+                    imgClassName="object-cover md:object-contain"
                   />
                 </SwiperSlide>
               ))}
@@ -280,77 +257,21 @@ const HeroSlider = ({ sliderData }) => {
                     onNext={() => swiperRef.current?.slideNext()}
                   />
                 </div>
-
-
-                {/* Custom pagination */}
-                <div className="!hidden md:!block">
-                  <CustomPagination
-                    totalSlides={sliderData?.length}
-                    currentSlide={currentSlide}
-                    goToSlide={(index) => swiperRef.current?.slideTo(index)}
-                    isRTL={isRTL}
-                    isPaused={isPaused}
-                  />
-                </div>
               </>
             )}
           </>
         ) : null}
-
-
-        {/* Location and Search Section - Always visible for users to change location */}
-        <div className={`light_bg_color ${isSliderData ? "pt-6 sm:mt-0 md:pt-0 md:bg-transparent" : "py-4 mt-0"} searchLocation`}>
-          <div className="container md:mx-auto">
-            <div className={`md:card_bg rounded-xl py-4 md:p-4 relative ${isSliderData ? " md:-mt-8" : "mt-0"} left-0 right-0 mx-auto z-10 max-w-full lg:max-w-4xl flex flex-row items-center justify-between md:border border-[var(--neutral-overlay)] gap-4`}>
-              {/* Location Section */}
-              <div className="card_bg p-3 rounded-[6px] md:rounded-none md:p-0 location flex items-center w-max md:w-1/2 text-center md:text-left" onClick={() => setIsModalOpen(true)}>
-                <div className="flex flex-1 items-center justify-between  w-full">
-                  <IoLocationOutline size={24} className="primary_text_color max-w-6 w-full" />
-                  <input
-                    readOnly
-                    className="hidden md:block ml-2 focus:outline-none w-full text-sm sm:text-base !bg-transparent"
-                    placeholder={t("enterLocation")}
-                    value={locationData?.locationAddress}
-                  />
-                  <div
-                    className={`hidden md:flex flex-1 items-center w-full ${isRTL ? "rotate-180" : "rotate-0"}`}
-                  >
-                    {""} <FiChevronRight size={24} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Divider */}
-              <div className="hidden md:block divider h-6 w-px bg-gray-300"></div>
-
-              {/* Search Input */}
-              <div className="card_bg p-3 rounded-[12px] shadow-[0px_6px_16px_0px_rgba(0,0,0,0.04)] border-[0.5px] md:shadow-none md:border-none md:rounded-none md:p-0 md:bg-transparent searchProvider w-full md:w-1/2 flex items-center gap-2">
-                <IoSearchOutline size={24} className="description_color" />
-
-                <input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)} // Corrected here
-                  type="text"
-                  placeholder={t("searchService")}
-                  className="bg-transparent border-none focus:outline-none w-full description_color"
-                />
-              </div>
-
-              {/* Search Button */}
-              <div
-                className="absolute top-[26px] right-2 rtl:left-2 rtl:right-auto md:relative md:top-0 md:right-0 search w-max md:w-auto text-center md:text-end"
-                onClick={handleSearchServiceOrProvider}
-              >
-                <button className="primary_bg_color text-white rounded-md text-xs sm:text-base px-2 py-1 sm:px-3 md:px-6 md:py-2 w-full md:w-auto transition">
-                  {t("search")}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
-      {isModalOpen && (
-        <LocationModal open={isModalOpen} onClose={handleClose} />
+      {sliderData?.length > 1 && (
+        <div className="mt-[2px] md:mt-4">
+          <CustomPagination
+            totalSlides={sliderData?.length}
+            currentSlide={currentSlide}
+            goToSlide={(index) => swiperRef.current?.slideTo(index)}
+            isRTL={isRTL}
+            isPaused={isPaused}
+          />
+        </div>
       )}
     </div>
   );

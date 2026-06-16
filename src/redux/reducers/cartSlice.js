@@ -70,7 +70,7 @@ const cartSlice = createSlice({
         ? { ...provider }
         : { ...initialState.currentProvider };
       state.items = items || [];
-      state.totalItems = items?.length || 0;
+      state.totalItems = state.items.reduce((total, item) => total + Number(item.qty || 0), 0);
 
       // Recalculate total price excluding visiting charges if delivery address exists
       const basePrice = state.items.reduce((total, item) => {
@@ -78,7 +78,7 @@ const cartSlice = createSlice({
           item.discounted_price > 0
             ? item.price_with_tax
             : item.original_price_with_tax;
-        return total + price * item.qty;
+        return total + price * Number(item.qty || 0);
       }, 0);
 
       state.itemsTotalPrice = basePrice;
@@ -137,7 +137,7 @@ const cartSlice = createSlice({
       }
 
       // Update totalItems count
-      state.totalItems = state.items.length;
+      state.totalItems = state.items.reduce((total, item) => total + Number(item.qty || 0), 0);
 
       // Recalculate total price including items' price only
       state.itemsTotalPrice = state.items.reduce((total, item) => {
@@ -145,7 +145,7 @@ const cartSlice = createSlice({
           item.discounted_price > 0
             ? item.price_with_tax
             : item.original_price_with_tax;
-        return total + price * item.qty;
+        return total + price * Number(item.qty || 0);
       }, 0);
 
       // Update sub_total and overall_amount to reflect the new totals
@@ -163,7 +163,7 @@ const cartSlice = createSlice({
       state.items = state.items.filter((item) => item.id !== itemId);
 
       // Explicitly update totalItems count
-      state.totalItems = state.items.length;
+      state.totalItems = state.items.reduce((total, item) => total + Number(item.qty || 0), 0);
 
       // If the cart becomes empty, reset all relevant states
       if (state.items.length === 0) {
@@ -183,7 +183,7 @@ const cartSlice = createSlice({
             item.discounted_price > 0
               ? item.price_with_tax
               : item.original_price_with_tax;
-          return total + price * item.qty;
+          return total + price * Number(item.qty || 0);
         }, 0);
 
         // Update sub_total to match the recalculated itemsTotalPrice
@@ -234,6 +234,7 @@ const cartSlice = createSlice({
 
       // Clear regular cart items since this is a custom job
       state.items = [];
+      state.totalItems = 1;
       state.itemsTotalPrice = Number(action.payload.counterPrice);
 
       // Reset promocode discount when switching providers

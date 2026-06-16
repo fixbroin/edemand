@@ -175,15 +175,7 @@ const Layout = ({ children }) => {
         const { lat, lon, lng } = router.query;
         const hasUrlLocation = lat && (lon || lng);
 
-        // Only redirect if we don't have URL location AND we're not already on /home
-        if (
-          !hasUrlLocation &&
-          currentRoute !== "/home" &&
-          !currentRoute.includes("/provider-details")
-        ) {
-          // Use replace instead of push to avoid adding to history stack
-          router.replace("/home");
-        }
+        // Location redirection to /home disabled as per UI improvement request
       }
     };
 

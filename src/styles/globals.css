@@ -1497,7 +1497,13 @@ textarea.input-like.expanded {
 }
 
 .aspect-slider {
-  aspect-ratio: 1920/800;
+  aspect-ratio: 16/9; /* Taller for mobile */
+}
+
+@media (min-width: 1024px) {
+  .aspect-slider {
+    aspect-ratio: 1920/600; /* Shorter for desktop */
+  }
 }
 
 @media (min-width: 550px) and (max-width: 1023px) {

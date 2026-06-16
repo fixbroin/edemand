@@ -134,7 +134,7 @@ const SidebarContent = memo(
           <CustomImageTag
             src={isDarkMode ? websettings?.footer_logo : websettings?.web_logo}
             alt={t("logo")}
-            className="h-[40px] md:h-[60px] aspect-logo max-w-[220px] safari-logo"
+            className="h-[40px] md:h-[60px] aspect-logo max-w-[220px] object-contain safari-logo"
           />
           <SheetClose asChild>
             <button className="description_color hover:text-gray-700 dark:hover:text-gray-200 transition-colors">

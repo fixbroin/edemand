@@ -8,7 +8,8 @@ import { useTranslation } from './TranslationContext'
 import { getUserData } from '@/redux/reducers/userDataSlice'
 import EditProfileModal from '../auth/EditProfile'
 import { useIsLogin } from '@/utils/Helper'
-import { selectLoginModalOpen, openLoginModal, closeLoginModal } from '@/redux/reducers/helperSlice'
+import { FaBars } from "react-icons/fa";
+import { selectLoginModalOpen, openLoginModal, closeLoginModal, openSidebar } from '@/redux/reducers/helperSlice'
 import SetPasswordModal from '../auth/SetPasswordModal'
 
 const BottomNavigation = () => {
@@ -54,11 +55,20 @@ const BottomNavigation = () => {
             icon: loginIcon(), // Use loginIcon for login
             text: t('login'),
             link: '/login'
+        },
+        {
+            icon: <FaBars size={18} />,
+            text: t('more'),
+            onClick: () => dispatch(openSidebar())
         }
     ];
 
-    const handleNavClick = (link) => {
-        if (link === '/login' && !isLoggedIn) {
+    const handleNavClick = (nav) => {
+        if (nav.onClick) {
+            nav.onClick();
+            return false;
+        }
+        if (nav.link === '/login' && !isLoggedIn) {
             dispatch(openLoginModal());
             return false; // Prevent default navigation
         }
@@ -67,29 +77,48 @@ const BottomNavigation = () => {
 
     return (
         <>
-            <div className='fixed bottom-0 left-0 right-0 grid grid-cols-4 gap-4 w-full card_bg h-[64px] text-[10px] font-normal z-10 md:hidden'>
+            <div className='fixed bottom-0 left-0 right-0 grid grid-cols-5 w-full card_bg h-[64px] text-[10px] font-normal z-10 md:hidden border-t'>
                 {navLinks.map((nav, index) => {
-                    const isActive =
+                    const isActive = nav.link && (
                         nav.link === '/'
                             ? currentPath === '/'
-                            : currentPath.startsWith(nav.link);
+                            : currentPath.startsWith(nav.link)
+                    );
+
+                    const content = (
+                        <div className={`flex flex-col items-center justify-center gap-1 h-full w-full ${isActive ? 'primary_text_color font-medium' : 'text-gray-500'
+                            }`}>
+                            <div className={`flex items-center justify-center ${isActive ? 'bottom_nav_icon' : 'bottom_nav_icon_white'}`}>
+                                {nav?.icon}
+                            </div>
+                            <p className="whitespace-nowrap">{nav.text}</p>
+                        </div>
+                    );
+
+                    if (nav.onClick) {
+                        return (
+                            <button
+                                key={index}
+                                onClick={() => handleNavClick(nav)}
+                                className="flex items-center justify-center w-full h-full focus:outline-none"
+                            >
+                                {content}
+                            </button>
+                        );
+                    }
 
                     return (
                         <Link
                             href={nav.link}
                             key={index}
                             onClick={(e) => {
-                                if (!handleNavClick(nav.link)) {
+                                if (!handleNavClick(nav)) {
                                     e.preventDefault();
                                 }
                             }}
-                            className={`flex flex-col items-center gap-1 m-auto ${isActive ? 'primary_text_color font-medium' : 'text-gray-500'
-                                }`}
+                            className="flex items-center justify-center w-full h-full"
                         >
-                            <div className={`flex items-center justify-center  ${isActive ? 'bottom_nav_icon' : 'bottom_nav_icon_white'}`}>
-                                {nav?.icon}
-                            </div>
-                            <p>{nav.text}</p>
+                            {content}
                         </Link>
                     );
                 })}

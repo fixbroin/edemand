@@ -13,8 +13,8 @@ const LoginHeader = ({ websettings, onClose, t }) => {
             <CustomImageTag
                 src={websettings?.web_logo}
                 alt={t("logo")}
-                className="aspect-logo w-[182px] object-cover"
-                imgClassName="object-cover"
+                className="aspect-logo w-[100px] object-contain"
+                imgClassName="object-contain"
             />
             <button
                 onClick={onClose}

@@ -41,18 +41,6 @@ const withAuth = (WrappedComponent) => {
             const isLocationRequiredRoute = ['/my-services-requests'].includes(router.pathname);
             const hasLocation = locationData?.lat && locationData?.lng;
 
-            // Redirect to landing page if on home page without location
-            if (isHomePage && !hasLocation) {
-                router.replace("/home");
-                return;
-            }
-
-            // Redirect to main page if on landing page with location set
-            if (isLandingPage && hasLocation) {
-                router.push("/");
-                return;
-            }
-
             if (isPrivateRoute && !isLoggedIn) {
                 router.push("/");
             } else if (isLocationRequiredRoute && !hasLocation) {
@@ -62,7 +50,7 @@ const withAuth = (WrappedComponent) => {
                 setIsAuthorized(true)
             }
             setAuthChecked(true)
-        }, [userData, router])
+        }, [userData, router, locationData])
         if (!authChecked) {
             return <Loader />;
         }
