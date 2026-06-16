@@ -127,7 +127,7 @@ const Checkout = () => {
           <div className="col-span-12 lg:col-span-8">
             <span className="text-3xl font-semibold">{t("checkout")}</span>
 
-            <div className="mt-6 border rounded-[18px] p-6">
+            <div className="mt-6 flex flex-col gap-0">
 
               {/* Service Type */}
               <ServiceTypeSelector

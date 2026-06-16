@@ -6,12 +6,8 @@ import { MdClose, MdModeEdit } from "react-icons/md";
 import { FaInfoCircle } from "react-icons/fa";
 import dayjs from "dayjs";
 import { useTranslation } from "@/components/Layout/TranslationContext";
+import { FiAlertTriangle } from "react-icons/fi";
 
-/**
- * ScheduleSection
- * Renders the date/time display row, the time-slot warning banner,
- * the "Select Here / Change" button, and the collapsible notes input.
- */
 const ScheduleSection = ({
     dilveryDetails,
     note,
@@ -25,127 +21,115 @@ const ScheduleSection = ({
     const t = useTranslation();
 
     return (
-        <div className="mb-6">
-            <span className="text-xl lg:text-2xl font-semibold">{t("scheduleAt")}</span>
-
-            <div className="mt-3 flex flex-wrap sm:flex-nowrap items-center p-3 gap-3 w-full">
-                {/* Date + Time display */}
-                <div className="flex flex-col items-start justify-start gap-3 w-full">
-                    <div className="flex flex-col md:flex-row items-center gap-3 w-full">
-                        {/* Date */}
-                        <div className="flex items-center space-x-2 gap-3 w-full">
-                            <span
-                                className={`${dilveryDetails?.dilveryDate
-                                    ? "light_bg_color primary_text_color"
-                                    : "neutral_overlay"
-                                    } p-3 rounded-[8px]`}
-                            >
-                                <BsCalendar3Week size={22} />
-                            </span>
-                            <div className="flex flex-col items-start justify-center">
-                                <span className="text-base font-normal description_color">{t("date")}</span>
-                                <span>
-                                    {dilveryDetails?.dilveryDate
-                                        ? dayjs(dilveryDetails.dilveryDate).format("DD/MM/YYYY")
-                                        : "---"}
-                                </span>
-                            </div>
-                        </div>
-
-                        {/* Time */}
-                        <div className="flex items-center space-x-2 gap-3 w-full">
-                            <span
-                                className={`${dilveryDetails?.dilveryTime
-                                    ? "light_bg_color primary_text_color"
-                                    : "neutral_overlay"
-                                    } p-3 rounded-[8px]`}
-                            >
-                                <IoTimeOutline size={22} />
-                            </span>
-                            <div className="flex flex-col items-start justify-center">
-                                <span className="text-base font-normal description_color">{t("time")}</span>
-                                <span>
-                                    {dilveryDetails?.dilveryTime
-                                        ? dayjs(
-                                            `1970-01-01T${dilveryDetails.dilveryTime.replace("-", ":")}`
-                                        ).format("h:mm A")
-                                        : "---"}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Time-slot warning banner */}
-                    {dilveryDetails?.dilveryTimeMessage && (
-                        <span className="w-full text-center text-sm warning_banner p-2 rounded-md dark:warning_banner mt-1 flex items-center justify-center gap-1">
-                            <FaInfoCircle size={16} />
-                            {dilveryDetails.dilveryTimeMessage}
-                        </span>
-                    )}
+        <div className="mb-6 rounded-[18px] border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden bg-white dark:bg-[#0F0F0F]">
+            {/* Header */}
+            <div className="bg-gray-50/80 dark:bg-white/5 px-5 py-4 flex flex-row items-center justify-between border-b border-gray-100 dark:border-gray-800">
+                <div className="flex items-center gap-2">
+                    <BsCalendar3Week className="w-5 h-5 primary_text_color" />
+                    <h3 className="text-lg font-semibold text_color">{t("scheduleAt")}</h3>
                 </div>
-
-                {/* Select / Change button */}
-                {dilveryDetails?.dilveryDate ? (
-                    <button
-                        className="px-4 py-2 border rounded-md w-full light_bg_color border_color"
-                        onClick={onOpenScheduleDrawer}
-                    >
-                        <span className="primary_text_color flex items-center justify-center gap-1">
-                            <span>{t("change")}</span>
-                            <BiSolidEdit size={22} />
-                        </span>
-                    </button>
-                ) : (
-                    <button
-                        className="px-4 py-2 border rounded-md border-black w-full transition-all duration-300 hover:primary_bg_color hover:border_color hover:text-white"
-                        onClick={onOpenScheduleDrawer}
-                    >
-                        <span>{t("selectHere")}</span>
-                    </button>
-                )}
+                <button 
+                    onClick={onOpenScheduleDrawer} 
+                    className="text-sm font-bold primary_text_color hover:opacity-80 transition-opacity"
+                >
+                    {dilveryDetails?.dilveryDate ? t("change") || "Change" : t("select") || "Select"}
+                </button>
             </div>
 
-            {/* Notes / Instructions */}
-            <div className="extraNotes mt-3">
-                {/* Expanded input */}
-                <div
-                    className={`overflow-hidden transition-[max-height,opacity] duration-500 ease-in-out ${activeNotes ? "max-h-[200px] opacity-100" : "max-h-0 opacity-0"
-                        }`}
-                >
-                    <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center justify-between light_bg_color border border_color w-full rounded-lg p-3">
-                            <input
-                                type="text"
-                                value={note}
-                                onChange={(e) => setNote(e.target.value)}
-                                placeholder={t("typeHere")}
-                                className="w-full focus:outline-none bg-transparent"
-                            />
-                            <MdClose
-                                size={22}
-                                className="bg-transparent description_color cursor-pointer"
-                                onClick={onClearNotes}
-                            />
+            {/* Content */}
+            <div className="p-5">
+                {dilveryDetails?.dilveryDate ? (
+                    <>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                            <div className="flex items-center gap-3 w-full sm:w-auto">
+                                <div className="bg-primary/10 dark:bg-primary/20 p-3 rounded-full flex-shrink-0">
+                                    <BsCalendar3Week className="w-5 h-5 primary_text_color" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-sm description_color leading-tight">{t("date")}</p>
+                                    <p className="font-bold text-base text_color">
+                                        {dayjs(dilveryDetails.dilveryDate).format("DD/MM/YYYY")}
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div className="hidden sm:block w-px h-8 bg-gray-200 dark:bg-gray-700 mx-2"></div>
+                            
+                            <div className="flex items-center gap-3 w-full sm:w-auto">
+                                <div className="bg-primary/10 dark:bg-primary/20 p-3 rounded-full flex-shrink-0">
+                                    <IoTimeOutline className="w-5 h-5 primary_text_color" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-sm description_color leading-tight">{t("time")}</p>
+                                    <p className="font-bold text-base text_color">
+                                        {dilveryDetails?.dilveryTime
+                                            ? dayjs(`1970-01-01T${dilveryDetails.dilveryTime.replace("-", ":")}`).format("h:mm A")
+                                            : "---"}
+                                    </p>
+                                </div>
+                            </div>
                         </div>
-                        <button
-                            className="light_bg_color primary_text_color rounded-lg text-white p-3 w-2/5"
-                            onClick={onSaveNotes}
-                        >
-                            {t("save")}
-                        </button>
-                    </div>
-                </div>
 
-                {/* Collapsed "Add Instruction" button */}
-                {!activeNotes && (
-                    <button
-                        className={`mt-4 flex items-center ${note ? "justify-start" : "justify-center"} p-3 rounded-md neutral_overlay w-full gap-2`}
-                        onClick={onToggleNotes}
+                        {/* Time-slot warning banner */}
+                        {dilveryDetails?.dilveryTimeMessage && (
+                            <div className="mt-4 flex items-center gap-2 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-500 p-3 rounded-xl text-sm border border-amber-200/50 dark:border-amber-500/20">
+                                <FaInfoCircle size={18} className="flex-shrink-0" />
+                                <span>{dilveryDetails.dilveryTimeMessage}</span>
+                            </div>
+                        )}
+                    </>
+                ) : (
+                    <div 
+                        className="flex flex-col items-center justify-center py-6 text-center cursor-pointer hover:bg-gray-50/50 dark:hover:bg-white/5 rounded-xl transition-colors" 
+                        onClick={onOpenScheduleDrawer}
                     >
-                        <MdModeEdit size={22} />
-                        <span className="text-sm font-normal">{note || t("addInstruction")}</span>
-                    </button>
+                        <FiAlertTriangle className="h-8 w-8 text-amber-500 mb-3" />
+                        <p className="font-semibold text-base text_color mb-1">No schedule selected</p>
+                        <p className="text-sm description_color">Click to pick a date and time</p>
+                    </div>
                 )}
+
+                {/* Notes / Instructions */}
+                <div className="mt-5 border-t border-gray-100 dark:border-gray-800 pt-5">
+                    {/* Expanded input */}
+                    <div
+                        className={`overflow-hidden transition-[max-height,opacity] duration-500 ease-in-out ${activeNotes ? "max-h-[200px] opacity-100" : "max-h-0 opacity-0"}`}
+                    >
+                        <div className="flex flex-col sm:flex-row items-center gap-3">
+                            <div className="flex items-center justify-between bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-gray-700 w-full rounded-xl p-3 focus-within:border-primary transition-colors">
+                                <input
+                                    type="text"
+                                    value={note}
+                                    onChange={(e) => setNote(e.target.value)}
+                                    placeholder={t("typeHere") || "Add instruction..."}
+                                    className="w-full focus:outline-none bg-transparent text-sm"
+                                />
+                                {note && (
+                                    <button onClick={onClearNotes} className="p-1 hover:bg-black/5 dark:hover:bg-white/10 rounded-full transition-colors">
+                                        <MdClose size={18} className="description_color" />
+                                    </button>
+                                )}
+                            </div>
+                            <button
+                                className="primary_bg_color hover:opacity-90 transition-opacity text-white rounded-xl py-3 px-6 w-full sm:w-auto font-medium text-sm flex-shrink-0"
+                                onClick={onSaveNotes}
+                            >
+                                {t("save")}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Collapsed "Add Instruction" button */}
+                    {!activeNotes && (
+                        <button
+                            className={`flex items-center justify-center sm:justify-start w-full gap-2 p-3 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 hover:border-primary hover:bg-primary/5 transition-all text-sm font-medium ${note ? "text_color" : "description_color"}`}
+                            onClick={onToggleNotes}
+                        >
+                            <MdModeEdit size={18} className={note ? "primary_text_color" : ""} />
+                            <span className="truncate">{note || t("addInstruction")}</span>
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     );
