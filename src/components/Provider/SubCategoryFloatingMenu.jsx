@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MdMenu } from "react-icons/md";
+import { MdMenu, MdClose } from "react-icons/md";
 import {
   Dialog,
   DialogContent,
@@ -43,16 +43,25 @@ const SubCategoryFloatingMenu = ({ categories, activeCategory, onCategoryClick }
         <DialogTrigger asChild>
           <button
             className="rounded-full shadow-xl flex items-center justify-center gap-2 h-10 px-4 sm:h-12 sm:px-6 primary_bg_color text-white transition-all duration-300 hover:scale-105 active:scale-95"
-            aria-label={t("jumpToCategory") || "Jump to Sub-Category"}
+            aria-label={t("Jump To Category") || "Jump to Sub-Category"}
           >
             <MdMenu className="h-5 w-5 sm:h-7 sm:w-7" />
-            <span className="hidden sm:inline font-semibold">{t("jumpToCategory") || "Jump to Sub-Category"}</span>
-            <span className="inline sm:hidden font-semibold">{t("menu") || "Menu"}</span>
+            <span className="hidden sm:inline font-semibold">{t("Jump To Category") || "Jump to Sub-Category"}</span>
+            <span className="inline sm:hidden font-semibold">{t("Menu") || "Menu"}</span>
           </button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl">
-          <DialogHeader className="p-4 border-b dark:border-gray-800 bg-white dark:bg-[#0F0F0F]">
-            <DialogTitle className="text-lg font-bold">{t("jumpToCategory") || "Jump to Category"}</DialogTitle>
+          <DialogHeader className="p-4 border-b dark:border-gray-800 bg-white dark:bg-[#0F0F0F] relative">
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-lg font-bold">{t("Jump To Category") || "Jump to Category"}</DialogTitle>
+              <button
+                onClick={() => setIsMenuModalOpen(false)}
+                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                aria-label={t("close") || "Close"}
+              >
+                <MdClose size={20} className="description_color" />
+              </button>
+            </div>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-gray-50/30 dark:bg-black/20 custom-scrollbar">
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-4">
