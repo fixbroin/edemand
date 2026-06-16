@@ -12,6 +12,7 @@
 # next.js
 /.next/
 /out/
+/fixbro 177/
 
 # zip files
 *.zip
