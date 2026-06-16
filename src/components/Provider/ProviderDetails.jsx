@@ -50,9 +50,6 @@ const ProviderDetails = () => {
   const locationRawData = useSelector((state) => state?.location);
   const settings = useSelector((state) => state.settingsData?.settings);
 
-  // All useRef hooks together
-  const providerAboutRef = useRef(null);
-
   // All useState hooks together — tab initialized from sessionStorage to avoid reload flash
   const [activeTab, setActiveTabLocal] = useState(() => {
     try {
@@ -63,11 +60,6 @@ const ProviderDetails = () => {
     }
   });
   const [isOpenInApp, setIsOpenInApp] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isOverflowing, setIsOverflowing] = useState(false);
-  const [visibleSpecIndex, setVisibleSpecIndex] = useState(0);
-  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // All useMemo hooks together
   const locationData = useMemo(() => {
@@ -286,26 +278,6 @@ const ProviderDetails = () => {
     } catch {}
   };
 
-  const openLightbox = (index) => {
-    setCurrentImageIndex(index);
-    setIsLightboxOpen(true);
-  };
-
-  const closeLightbox = () => {
-    setIsLightboxOpen(false);
-  };
-
-  // Check if About Us section is overflowing
-  useEffect(() => {
-    if (providerAboutRef.current) {
-      const lineHeight = parseFloat(
-        getComputedStyle(providerAboutRef.current).lineHeight
-      );
-      const maxLinesHeight = lineHeight * 4;
-      setIsOverflowing(providerAboutRef.current.scrollHeight > maxLinesHeight);
-    }
-  }, [providerData]);
-
   // Handle mobile app drawer
   useEffect(() => {
     const isMobileOrTablet = window.innerWidth <= 1024;
@@ -338,184 +310,71 @@ const ProviderDetails = () => {
         SecEleLink={`/provider-details/${slug}`}
       />
       <section className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pb-6">
-          {/* Left Section */}
-          <div className="col-span-12 lg:col-span-4">
-            <div className="sticky top-36">
-              <div className="flex flex-col gap-4">
-                {/* Service Details */}
-                <div className="rounded-[18px] provider_info_card dark:card_bg shadow-sm border border-gray-200">
-                  <div className=" overflow-hidden p-6 pb-0">
-                    <CustomImageTag
-                      src={providerData?.banner_image}
-                      alt={providerData?.company_name}
-                      className=""
-                      imgClassName="w-full aspect-provider-banner object-cover rounded-xl"
-                    />
-                  </div>
-                  <div className="p-5">
-                    <div className="flex flex-col sm:flex-row items-start gap-3">
-                      <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-100">
-                        <CustomImageTag
-                          src={providerData?.image}
-                          alt={providerData?.company_name}
-                          className="w-full aspect-square object-cover"
-
-                        />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                          {providerData?.translated_company_name ||
-                            providerData?.company_name}
-                        </h3>
-                        <div className="flex items-center gap-3 mt-1">
-                          {providerData?.ratings > 0 && (
-                            <div
-                              className="flex items-center gap-1 cursor-pointer hover:underline"
-                              onClick={() => handleTabChange("reviews")}
-                            >
-                              <FaStar className="w-3.5 h-3.5 rating_icon_color" />
-                              <span className="text-sm font-medium">
-                                {providerData?.ratings}
-                              </span>
-                            </div>
-                          )}
-                          {providerData?.distance > 0 && (
-                            <div
-                              className="flex items-center gap-1 cursor-pointer text-sm description_color hover:underline"
-                              onClick={() => handleTabChange("about")}
-                            >
-                              <IoLocationOutline
-                                className="primary_text_color font-bold"
-                                size={16}
-                              />
-                              {showDistance(providerData?.distance)}
-                            </div>
-                          )}
-                          {providerData?.total_services > 0 && (
-                            <div
-                              className="text-sm primary_text_color font-medium cursor-pointer hover:underline"
-                              onClick={() => handleTabChange("services")}
-                            >
-                              {providerData?.total_services} {t("services")}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="mt-4 space-y-4">
-                      <p
-                        ref={providerAboutRef}
-                        className={`text-sm description_color leading-relaxed ${!isExpanded ? "line-clamp-4" : ""
-                          } transition-all duration-300`}
-                      >
-                        {providerData?.translated_about || providerData?.about}
-                      </p>
-                      {isOverflowing && (
-                        <button
-                          className="text-sm hover:underline"
-                          onClick={() => setIsExpanded(!isExpanded)}
-                        >
-                          {isExpanded ? t("viewLess") : t("viewMore")}
-                        </button>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3 mt-4">
-                      <button
-                        className={`${providerData?.is_bookmarked === "1"
-                          ? "card_bg dark:light_bg_color primary_text_color"
-                          : "card_bg dark:light_bg_color"
-                          } p-2 rounded-sm`}
-                        onClick={handleBookmark}
-                        disabled={bookmarkMutation.isPending}
-                      >
-                        {providerData?.is_bookmarked === "1" ? (
-                          <BsFillBookmarkCheckFill size={24} />
-                        ) : (
-                          <CiBookmarkPlus size={24} />
-                        )}
-                      </button>
-
-                      <Share title={translatedCompanyName} />
-
-                      {isPreBookingChatAvailable &&
-                        isProviderPreBookingChatAvailable && (
-                          <button
-                            className="card_bg dark:light_bg_color p-2 rounded-sm"
-                            onClick={handleChat}
-                          >
-                            <HiOutlineChatBubbleOvalLeftEllipsis size={24} />
-                          </button>
-                        )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Photo Gallery section */}
-                {providerData?.other_images?.length > 0 && (
-                  <div className="light_bg_color rounded-lg overflow-hidden mt-4 relative p-5">
-                    <div>
-                      <h2 className="text-[20px] font-semibold">
-                        {t("photos")}
-                      </h2>
-                      <div className="photos grid grid-cols-3 gap-4 mt-6">
-                        {providerData?.other_images
-                          ?.slice(0, 4)
-                          .map((image, index) => (
-                            <div
-                              className="photo cursor-pointer"
-                              key={index}
-                              onClick={() => openLightbox(index)}
-                            >
-                              <CustomImageTag
-                                src={image}
-                                alt={`other_image_${index}`}
-                                imgClassName="rounded-md w-full aspect-service-other object-cover"
-
-                              />
-                            </div>
-                          ))}
-
-                        {providerData?.other_images?.length >= 5 && (
-                          <div className="photo col-span-2 cursor-pointer">
-                            <div
-                              className="relative rounded-md overflow-hidden"
-                              onClick={() => openLightbox(4)}
-                            >
-                              <CustomImageTag
-                                src={providerData?.other_images[4]}
-                                alt={providerData?.company_name}
-                                imgClassName="w-full aspect-service-other2 object-cover"
-                              />
-                              {providerData?.other_images?.length > 5 && (
-                                <div className="absolute inset-0 bg-gray-900 bg-opacity-70 flex justify-center items-center">
-                                  <span className="text-md font-bold text-white">
-                                    +{providerData.other_images.length - 5}{" "}
-                                    {t("more")}
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        )}
-                        {isLightboxOpen && (
-                          <Lightbox
-                            isLightboxOpen={isLightboxOpen}
-                            images={providerData.other_images}
-                            initialIndex={currentImageIndex}
-                            onClose={closeLightbox}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
+        <div className="pb-6">
+          {/* Action Bar with Provider Info and Buttons */}
+          <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 bg-white dark:bg-[#0F0F0F] p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
+            <div className="flex items-center gap-4 w-full md:w-auto">
+              <div className="w-12 h-12 rounded-lg overflow-hidden border border-gray-100 flex-shrink-0">
+                <CustomImageTag
+                  src={providerData?.image}
+                  alt={providerData?.company_name}
+                  className="w-full aspect-square object-cover"
+                />
               </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white line-clamp-1">
+                  {translatedCompanyName}
+                </h1>
+                <div className="flex items-center gap-3 mt-0.5">
+                  {providerData?.ratings > 0 && (
+                    <div className="flex items-center gap-1 cursor-pointer hover:underline" onClick={() => handleTabChange("reviews")}>
+                      <FaStar className="w-3.5 h-3.5 rating_icon_color" />
+                      <span className="text-sm font-medium">{providerData?.ratings}</span>
+                    </div>
+                  )}
+                  {providerData?.distance > 0 && (
+                    <div className="flex items-center gap-1 text-sm description_color cursor-pointer hover:underline" onClick={() => handleTabChange("about")}>
+                      <IoLocationOutline className="primary_text_color font-bold" size={16} />
+                      {showDistance(providerData?.distance)}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+              <button
+                className={`${providerData?.is_bookmarked === "1"
+                  ? "card_bg dark:light_bg_color primary_text_color"
+                  : "card_bg dark:light_bg_color"
+                  } p-2.5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 hover:shadow-md transition-all`}
+                onClick={handleBookmark}
+                disabled={bookmarkMutation.isPending}
+                title={t("bookmark")}
+              >
+                {providerData?.is_bookmarked === "1" ? (
+                  <BsFillBookmarkCheckFill size={22} />
+                ) : (
+                  <CiBookmarkPlus size={22} />
+                )}
+              </button>
+
+              <Share title={translatedCompanyName} />
+
+              {isPreBookingChatAvailable && isProviderPreBookingChatAvailable && (
+                <button
+                  className="card_bg dark:light_bg_color p-2.5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800 hover:shadow-md transition-all"
+                  onClick={handleChat}
+                  title={t("chat")}
+                >
+                  <HiOutlineChatBubbleOvalLeftEllipsis size={22} />
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Right Section */}
-          <div className="col-span-12 lg:col-span-8">
+          {/* Main Tabs Section */}
+          <div className="w-full">
             <Tabs className="w-full" value={activeTab}>
               <TabsList className="light_bg_color rounded-md w-full h-full flex gap-2 p-2 overflow-x-auto md:overflow-x-hidden scrollbar-none justify-start md:justify-center">
                 <style jsx global>{`
@@ -570,7 +429,7 @@ const ProviderDetails = () => {
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="services">
+              <TabsContent value="services" className="mt-6">
                 <ProviderServiceTab
                   slug={slug}
                   isLoadingServices={isLoadingServices}
@@ -582,13 +441,13 @@ const ProviderDetails = () => {
                   onLoadMore={handleLoadMoreServices}
                 />
               </TabsContent>
-              <TabsContent value="about">
+              <TabsContent value="about" className="mt-6">
                 <ProviderAboutTab providerData={providerData} />
               </TabsContent>
-              <TabsContent value="reviews">
+              <TabsContent value="reviews" className="mt-6">
                 <ProviderReviewTab providerData={providerData} slug={slug} />
               </TabsContent>
-              <TabsContent value="offers">
+              <TabsContent value="offers" className="mt-6">
                 <ProviderOfferTab providerSlug={slug} />
               </TabsContent>
             </Tabs>

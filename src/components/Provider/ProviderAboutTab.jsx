@@ -1,6 +1,6 @@
 import {
   darkThemeStyles,
-  t,
+  showDistance,
   useGoogleMapsLoader,
   useIsDarkMode,
 } from "@/utils/Helper";
@@ -9,7 +9,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { GrLocation } from "react-icons/gr";
 import { useTranslation } from "../Layout/TranslationContext";
 import DOMPurify from "dompurify";
-
+import CustomImageTag from "../ReUseableComponents/CustomImageTag";
+import { FaStar } from "react-icons/fa6";
+import { IoLocationOutline } from "react-icons/io5";
+import Lightbox from "../ReUseableComponents/CustomLightBox/LightBox";
 
 const ProviderAboutTab = ({ providerData }) => {
   const t = useTranslation();
@@ -31,6 +34,8 @@ const ProviderAboutTab = ({ providerData }) => {
   const [fullDescription, setFullDescription] = useState("");
   const [isTruncated, setIsTruncated] = useState(false);
   const aboutRef = useRef(null);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Convert time from 24-hour format to 12-hour format
   const convertTo12HourFormat = (time) => {
@@ -99,20 +104,28 @@ const ProviderAboutTab = ({ providerData }) => {
         currentMinutes < s.closingMinutes
     ) ?? false;
 
-      useEffect(() => {
-        const descriptionToUse = providerData?.translated_long_description || providerData?.long_description;
+  useEffect(() => {
+    const descriptionToUse = providerData?.translated_long_description || providerData?.long_description;
 
-        if (descriptionToUse) {
-          const sanitizedHTML = DOMPurify.sanitize(descriptionToUse);
-          const tempElement = document.createElement("div");
-          tempElement.innerHTML = sanitizedHTML;
-          const plainText = tempElement.textContent || tempElement.innerText || "";
+    if (descriptionToUse) {
+      const sanitizedHTML = DOMPurify.sanitize(descriptionToUse);
+      const tempElement = document.createElement("div");
+      tempElement.innerHTML = sanitizedHTML;
+      const plainText = tempElement.textContent || tempElement.innerText || "";
 
-          setFullDescription(sanitizedHTML);
-          setIsTruncated(plainText.trim().length > 150);
-        }
-      }, [providerData]);
-      
+      setFullDescription(sanitizedHTML);
+      setIsTruncated(plainText.trim().length > 150);
+    }
+  }, [providerData]);
+
+  const openLightbox = (index) => {
+    setCurrentImageIndex(index);
+    setIsLightboxOpen(true);
+  };
+
+  const closeLightbox = () => {
+    setIsLightboxOpen(false);
+  };
 
   // Error or loading states
   if (loadError) {
@@ -130,29 +143,111 @@ const ProviderAboutTab = ({ providerData }) => {
   };
   return (
     <div className="space-y-6">
-      {/* Company Information */}
-      {(providerData?.translated_long_description || providerData?.long_description) && (
-      <div className="rounded-lg">
-        <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3">
-          {t("companyInformation")}
-        </h2>
-        <div className="space-y-4">
-          <div
-            className={`text-sm description_color leading-relaxed overflow-hidden ${!isExpanded && isTruncated ? "line-clamp-4  " : ""}`}
-            dangerouslySetInnerHTML={{ __html: fullDescription }}
+      {/* Banner and Basic Info */}
+      <div className="rounded-[18px] provider_info_card dark:card_bg shadow-sm border border-gray-200 overflow-hidden">
+        <div className="p-4 sm:p-6 pb-0">
+          <CustomImageTag
+            src={providerData?.banner_image}
+            alt={providerData?.company_name}
+            imgClassName="w-full aspect-provider-banner object-cover rounded-xl"
           />
-
-          {isTruncated && (
-            <button
-              className="text-sm hover:underline"
-              onClick={() => setIsExpanded(!isExpanded)}
-            >
-              {isExpanded ? t("viewLess") : t("viewMore")}
-            </button>
-          )}
+        </div>
+        <div className="p-5">
+          <div className="flex flex-col sm:flex-row items-start gap-3">
+            <div className="w-14 h-14 rounded-xl overflow-hidden border border-gray-100 flex-shrink-0">
+              <CustomImageTag
+                src={providerData?.image}
+                alt={providerData?.company_name}
+                className="w-full aspect-square object-cover"
+              />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                {providerData?.translated_company_name || providerData?.company_name}
+              </h3>
+              <div className="flex items-center gap-3 mt-1 flex-wrap">
+                {providerData?.ratings > 0 && (
+                  <div className="flex items-center gap-1">
+                    <FaStar className="w-3.5 h-3.5 rating_icon_color" />
+                    <span className="text-sm font-medium">{providerData?.ratings}</span>
+                  </div>
+                )}
+                {providerData?.distance > 0 && (
+                  <div className="flex items-center gap-1 text-sm description_color">
+                    <IoLocationOutline className="primary_text_color font-bold" size={16} />
+                    {showDistance(providerData?.distance)}
+                  </div>
+                )}
+                {providerData?.total_services > 0 && (
+                  <div className="text-sm primary_text_color font-medium">
+                    {providerData?.total_services} {t("services")}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="mt-4">
+            <p className="text-sm description_color leading-relaxed">
+              {providerData?.translated_about || providerData?.about}
+            </p>
+          </div>
         </div>
       </div>
-    )}
+
+      {/* Company Information */}
+      {(providerData?.translated_long_description || providerData?.long_description) && (
+        <div className="rounded-lg">
+          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3">
+            {t("companyInformation")}
+          </h2>
+          <div className="space-y-4">
+            <div
+              className={`text-sm description_color leading-relaxed overflow-hidden ${!isExpanded && isTruncated ? "line-clamp-4  " : ""}`}
+              dangerouslySetInnerHTML={{ __html: fullDescription }}
+            />
+
+            {isTruncated && (
+              <button
+                className="text-sm hover:underline"
+                onClick={() => setIsExpanded(!isExpanded)}
+              >
+                {isExpanded ? t("viewLess") : t("viewMore")}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Photo Gallery section */}
+      {providerData?.other_images?.length > 0 && (
+        <div className="light_bg_color rounded-lg overflow-hidden mt-4 relative p-5">
+          <h2 className="text-[20px] font-semibold">{t("photos")}</h2>
+          <div className="photos grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 mt-6">
+            {providerData?.other_images?.map((image, index) => (
+              <div
+                className="photo cursor-pointer"
+                key={index}
+                onClick={() => openLightbox(index)}
+              >
+                <CustomImageTag
+                  src={image}
+                  alt={`other_image_${index}`}
+                  imgClassName="rounded-md w-full aspect-service-other object-cover"
+                />
+              </div>
+            ))}
+          </div>
+          {isLightboxOpen && (
+            <Lightbox
+              isLightboxOpen={isLightboxOpen}
+              images={providerData.other_images}
+              initialIndex={currentImageIndex}
+              onClose={closeLightbox}
+            />
+          )}
+        </div>
+      )}
+
       {/* Business Hours */}
       <div className="rounded-lg">
         <div className="flex justify-between items-center flex-wrap gap-2 mb-4">
@@ -189,17 +284,13 @@ const ProviderAboutTab = ({ providerData }) => {
               >
                 <p
                   className={`font-medium ${
-                    isToday
-                      ? "primary_text_color"
-                      : "text-gray-900 dark:text-white"
+                    isToday ? "primary_text_color" : "text-gray-900 dark:text-white"
                   }`}
                 >
                   {schedule?.day}
                 </p>
                 {isClosed ? (
-                  <p className="text-sm text-gray-400 dark:text-gray-500">
-                    {t("closed")}
-                  </p>
+                  <p className="text-sm text-gray-400 dark:text-gray-500">{t("closed")}</p>
                 ) : (
                   <div className="flex flex-wrap gap-2">
                     {schedule.shifts.map((shift, si) =>
@@ -229,45 +320,41 @@ const ProviderAboutTab = ({ providerData }) => {
       </div>
 
       {/* Contact Us */}
-      {providerData?.latitude &&
-        providerData?.longitude &&
-        providerData?.address && (
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              {t("contactUs")}
-            </h2>
+      {providerData?.latitude && providerData?.longitude && providerData?.address && (
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            {t("contactUs")}
+          </h2>
 
-            {/* Map */}
-            <div className="w-full h-[320px] rounded-lg mb-4 relative overflow-hidden">
-              <GoogleMap
-                mapContainerClassName="w-full h-full"
-                center={center}
-                zoom={15}
-                options={{
-                  streetViewControl: false,
-                  styles: isDarkMode ? darkThemeStyles : [],
-                }}
-              >
-                {providerData?.latitude && providerData?.longitude && (
-                  <MarkerF position={center} />
-                )}
-              </GoogleMap>
+          {/* Map */}
+          <div className="w-full h-[320px] rounded-lg mb-4 relative overflow-hidden">
+            <GoogleMap
+              mapContainerClassName="w-full h-full"
+              center={center}
+              zoom={15}
+              options={{
+                streetViewControl: false,
+                styles: isDarkMode ? darkThemeStyles : [],
+              }}
+            >
+              {providerData?.latitude && providerData?.longitude && <MarkerF position={center} />}
+            </GoogleMap>
+          </div>
+
+          {/* Address */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center p-[12px] light_bg_color rounded-md primary_text_color">
+              <GrLocation className="h-5 w-5 mt-1 flex-shrink-0" />
             </div>
-
-            {/* Address */}
-            <div className="flex items-center gap-2">
-              <div className="flex items-center justify-center p-[12px] light_bg_color rounded-md primary_text_color">
-                <GrLocation className="h-5 w-5 mt-1 flex-shrink-0" />
-              </div>
-              <div>
-                <p className="text-sm primary_text_color">{t("address")}</p>
-                <p className="text-xs sm:text-base md:text-lg font-medium">
-                  {providerData?.address}
-                </p>
-              </div>
+            <div>
+              <p className="text-sm primary_text_color">{t("address")}</p>
+              <p className="text-xs sm:text-base md:text-lg font-medium">
+                {providerData?.address}
+              </p>
             </div>
           </div>
-        )}
+        </div>
+      )}
     </div>
   );
 };
