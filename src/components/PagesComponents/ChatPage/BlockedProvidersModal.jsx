@@ -62,7 +62,7 @@ const BlockedProvidersModal = ({ isOpen, onClose, blockedProviders, isLoading, o
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-2xl w-[95%] mx-auto">
+            <DialogContent className="sm:max-w-2xl w-[calc(100%-4px)] mx-auto">
                 <DialogHeader className="relative rtl:flex-reverse">
                     <DialogTitle className="flex items-center gap-2 text-lg sm:text-xl">
                         <RiUserForbidFill className="primary_text_color text-xl sm:text-2xl" />

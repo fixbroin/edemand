@@ -6,7 +6,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { IoSearchOutline } from "react-icons/io5";
+import { IoSearchOutline, IoClose } from "react-icons/io5";
 import { useRouter } from "next/router";
 import { convertToSlug } from "@/utils/Helper";
 import { toast } from "sonner";
@@ -40,9 +40,12 @@ const SearchDialog = ({ isOpen, onClose }) => {
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden border-none shadow-2xl">
-                <DialogHeader className="p-4 border-b">
+            <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden border-none shadow-2xl !top-20 !translate-y-0">
+                <DialogHeader className="p-4 border-b flex flex-row items-center justify-between space-y-0">
                     <DialogTitle className="text-lg font-semibold">{t("searchService")}</DialogTitle>
+                    <button onClick={onClose} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors">
+                        <IoClose size={24} className="description_color" />
+                    </button>
                 </DialogHeader>
                 <div className="p-6">
                     <form onSubmit={handleSearch} className="relative flex items-center">

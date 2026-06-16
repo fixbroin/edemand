@@ -38,7 +38,7 @@ const StripePayment = ({ clientKey, amount, orderID, open, setOpen, t, isAdditio
 
   return (
     <Dialog open={open}>
-      <DialogContent className="card_bg rounded-lg shadow-lg p-6 w-full max-w-6xl">
+      <DialogContent className="card_bg rounded-lg shadow-lg p-6 w-[calc(100%-4px)] max-w-6xl">
         <div className="w-full flex items-center justify-between">
           <span>{t("pay_with_stripe")}</span>
           <button onClick={handleClose}>

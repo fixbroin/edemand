@@ -23,7 +23,7 @@ const PaymentMethodDrawer = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="w-[95vw] max-w-4xl p-0 mx-auto">
+      <DialogContent className="w-[calc(100%-4px)] max-w-4xl p-0 mx-auto">
         <div className="p-4 sm:p-6">
           {/* Header */}
           <div className="mb-4 sm:mb-6">

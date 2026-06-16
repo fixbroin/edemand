@@ -31,7 +31,7 @@ const DrawerContent = React.forwardRef(({ className, children, ...props }, ref) 
     <DrawerPrimitive.Content
       ref={ref}
       className={cn(
-        "fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-[10px] border bg-background",
+        "fixed inset-x-[2px] bottom-0 z-50 flex flex-col rounded-t-[10px] border bg-background",
         "mt-24 md:mt-16 lg:mt-10",
         "max-h-[85vh] md:max-h-[90vh] lg:max-h-[95vh]",
         // Ensure touch scrolling works on mobile (iOS Safari needs momentum scrolling)

@@ -473,7 +473,7 @@ const LoginModal = ({ open, close, setOpenProfileModal, setOpenSetPasswordModal 
         <>
             <Dialog open={open}>
                 <DialogTitle className="hidden"></DialogTitle>
-                <DialogContent className="card_bg p-6 md:p-8 rounded-md shadow-lg w-full max-w-xl">
+                <DialogContent className="card_bg p-6 md:p-8 rounded-md shadow-lg w-[calc(100%-4px)] max-w-xl">
                     {/* Show loading indicator when processing redirect */}
                     {state.isProcessingRedirect ? (
                         <div className="flex flex-col items-center justify-center h-60">
