@@ -9,6 +9,13 @@ import { useTranslation } from "../Layout/TranslationContext";
 import { allServices } from "@/api/apiRoutes";
 import CustomImageTag from "../ReUseableComponents/CustomImageTag";
 import { cn } from "@/lib/utils";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const SEARCH_DEBOUNCE_MS = 400;
 
@@ -33,6 +40,8 @@ const ProviderServiceTab = ({
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [activeCategory, setActiveCategory] = useState(null);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+
   const requestIdRef = useRef(0);
   const debouncedTermRef = useRef("");
   const categoryRefs = useRef({});
@@ -48,26 +57,15 @@ const ProviderServiceTab = ({
   const scrollLeftRef = useRef(0);
   const dragDistanceRef = useRef(0);
 
-  const isSearchActive = searchTerm.trim().length > 0;
-
-  // Group services by category
+  // Group services by category (Main List)
   const groupedServices = useMemo(() => {
-    if (isSearchActive) {
-      return {
-        [t("searchResults")]: {
-          name: t("searchResults"),
-          items: searchResults,
-        },
-      };
-    }
-
     const groups = {};
     services.forEach((service) => {
       const catName = service.translated_category_name || service.category_name || t("otherServices");
       if (!groups[catName]) {
         groups[catName] = {
           name: catName,
-          // Use service image as preference for subcategory icon as requested
+          // Use service image as preference for subcategory icon
           image: service.image_of_the_service || service.category_image,
           items: [],
         };
@@ -75,7 +73,7 @@ const ProviderServiceTab = ({
       groups[catName].items.push(service);
     });
     return groups;
-  }, [isSearchActive, searchResults, services, t]);
+  }, [services, t]);
 
   const categories = useMemo(() => Object.values(groupedServices), [groupedServices]);
 
@@ -137,7 +135,7 @@ const ProviderServiceTab = ({
           limit: 20,
           offset: 0,
         });
-        if (reqId !== requestIdRef.current) return; // stale
+        if (reqId !== requestIdRef.current) return;
         if (response?.error === false) {
           setSearchResults(response?.data || []);
         } else {
@@ -170,7 +168,7 @@ const ProviderServiceTab = ({
     carouselRef.current?.classList.add("cursor-grab");
   };
 
-  const handleMouseUp = (e) => {
+  const handleMouseUp = () => {
     if (!isDraggingRef.current) return;
     isDraggingRef.current = false;
     carouselRef.current?.classList.remove("cursor-grabbing");
@@ -181,7 +179,7 @@ const ProviderServiceTab = ({
     if (!isDraggingRef.current || !carouselRef.current) return;
     e.preventDefault();
     const x = e.pageX - carouselRef.current.offsetLeft;
-    const walk = (x - startXRef.current) * 2; // Scroll speed multiplier
+    const walk = (x - startXRef.current) * 2;
     carouselRef.current.scrollLeft = scrollLeftRef.current - walk;
     dragDistanceRef.current = Math.abs(x - startXRef.current);
   };
@@ -190,7 +188,7 @@ const ProviderServiceTab = ({
     setActiveCategory(categoryName);
     const element = categoryRefs.current[categoryName];
     if (element) {
-      const headerOffset = 100; // Adjusted for non-sticky header
+      const headerOffset = 150;
       const elementPosition = element.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
@@ -202,7 +200,6 @@ const ProviderServiceTab = ({
   };
 
   const onCategoryItemClick = (e, catName) => {
-    // If the mouse was moved significantly, it was a drag, not a click
     if (dragDistanceRef.current > 5) {
       e.preventDefault();
       return;
@@ -220,10 +217,6 @@ const ProviderServiceTab = ({
     }
   };
 
-  const showInitialSkeleton = !isSearchActive && isLoadingServices;
-  const showSearchSkeleton = isSearchActive && isSearching;
-  const showEmpty = !showInitialSkeleton && !showSearchSkeleton && services.length === 0 && (!isSearchActive || searchResults.length === 0);
-
   const clearSearch = () => {
     setSearchTerm("");
     setDebouncedTerm("");
@@ -240,35 +233,84 @@ const ProviderServiceTab = ({
         </div>
       ));
 
+  const showInitialSkeleton = isLoadingServices;
+  const showEmpty = !showInitialSkeleton && services.length === 0;
+
   return (
     <div className="relative">
-      {/* Search bar */}
-      <div className="bg-white dark:bg-[#0F0F0F] pt-2 pb-3">
-        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-white/5 transition-colors duration-200">
-          <FaSearch size={14} className="description_color shrink-0" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder={t("searchService")}
-            className="flex-1 bg-transparent outline-none text-sm placeholder:opacity-60"
+      {/* Floating Search Button & Dialog */}
+      <Dialog open={isSearchModalOpen} onOpenChange={setIsSearchModalOpen}>
+        <DialogTrigger asChild>
+          <button
+            className="fixed bottom-10 right-6 sm:right-10 z-[60] w-14 h-14 primary_bg_color text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95 group"
             aria-label={t("searchService")}
-          />
-          {searchTerm && (
-            <button
-              type="button"
-              onClick={clearSearch}
-              className="description_color shrink-0 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10"
-              aria-label={t("clear") || "Clear"}
-            >
-              <MdClose size={16} />
-            </button>
-          )}
-        </div>
+          >
+            <FaSearch size={20} className="group-hover:rotate-12 transition-transform" />
+          </button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-[700px] max-h-[85vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl">
+          <DialogHeader className="p-4 border-b dark:border-gray-800 bg-white dark:bg-[#0F0F0F]">
+            <DialogTitle className="text-lg font-bold mb-4">{t("searchService")}</DialogTitle>
+            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-white/5 transition-colors duration-200">
+              <FaSearch size={14} className="description_color shrink-0" />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder={t("searchService")}
+                className="flex-1 bg-transparent outline-none text-sm placeholder:opacity-60"
+                autoFocus
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className="description_color shrink-0 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10"
+                >
+                  <MdClose size={16} />
+                </button>
+              )}
+            </div>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto p-4 bg-gray-50/30 dark:bg-black/20 custom-scrollbar">
+            {isSearching ? (
+              <div className="grid grid-cols-1 gap-4">
+                {renderSkeletons(3)}
+              </div>
+            ) : searchTerm.trim().length > 0 && searchResults.length === 0 ? (
+              <div className="flex flex-col items-center justify-center my-12">
+                <NoDataFound
+                  title={t("noResultsFound")}
+                  desc={t("noResultsFoundText")}
+                />
+              </div>
+            ) : searchTerm.trim().length > 0 ? (
+              <div className="grid grid-cols-1 gap-4 pb-4">
+                {searchResults.map((ele, index) => (
+                  <ProviderDetailsServiceCard
+                    key={ele?.id || index}
+                    slug={slug}
+                    provider={provider}
+                    data={ele}
+                    compnayName={companyName}
+                    isDisabled={Number(provider?.is_Available_at_location) === 0}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center my-12 text-gray-400 italic">
+                <FaSearch size={40} className="mb-4 opacity-20" />
+                <p>{t("Search For Anything") || "Start typing to search services..."}</p>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
+      <div className="bg-white dark:bg-[#0F0F0F] pt-2 pb-3">
         {/* Subcategory Carousel */}
-        {!isSearchActive && categories.length > 1 && (
-          <div className="relative group/carousel mt-4">
+        {categories.length > 1 && (
+          <div className="relative group/carousel mt-2">
             {/* Left Scroll Button */}
             {canScrollLeft && (
               <button
@@ -311,7 +353,7 @@ const ProviderServiceTab = ({
                     />
                   </div>
                   <span className={cn(
-                    "text-[12px] sm:text-xs font-semibold text-center line-clamp-2 px-1 leading-tight",
+                    "text-[10px] sm:text-xs font-semibold text-center line-clamp-2 px-1 leading-tight",
                     activeCategory === cat.name ? "text-white" : "primary_text_color"
                   )}>
                     {cat.name}
@@ -336,15 +378,15 @@ const ProviderServiceTab = ({
 
       {/* Services List */}
       <div className="mt-4">
-        {showInitialSkeleton || showSearchSkeleton ? (
+        {showInitialSkeleton ? (
           <div className="grid grid-cols-1 gap-4">
             {renderSkeletons(5)}
           </div>
         ) : showEmpty ? (
           <div className="flex flex-col items-center justify-center my-12">
             <NoDataFound
-              title={isSearchActive ? t("noResultsFound") || t("noServices") : t("noServices")}
-              desc={isSearchActive ? t("noResultsFoundText") || t("noServicesText") : t("noServicesText")}
+              title={t("noServices")}
+              desc={t("noServicesText")}
             />
           </div>
         ) : (
@@ -355,12 +397,10 @@ const ProviderServiceTab = ({
                 ref={(el) => (categoryRefs.current[group.name] = el)}
                 className="scroll-mt-48"
               >
-                {!isSearchActive && (
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-1.5 h-6 primary_bg_color rounded-full" />
-                    <h2 className="text-xl font-bold text_color">{group.name}</h2>
-                  </div>
-                )}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-1.5 h-6 primary_bg_color rounded-full" />
+                  <h2 className="text-xl font-bold text_color">{group.name}</h2>
+                </div>
                 <div className="grid grid-cols-1 gap-4">
                   {group.items.map((ele, index) => (
                     <ProviderDetailsServiceCard
@@ -376,26 +416,23 @@ const ProviderServiceTab = ({
               </div>
             ))}
 
-            {/* Load more — hidden when searching */}
-            {!isSearchActive && (
-              <div className="loadmore pb-12 flex items-center justify-center">
-                {isFetchingNextServices ? (
-                  <button className="primary_bg_color py-3 px-8 rounded-xl">
-                    <MiniLoader />
+            <div className="loadmore pb-12 flex items-center justify-center">
+              {isFetchingNextServices ? (
+                <button className="primary_bg_color py-3 px-8 rounded-xl">
+                  <MiniLoader />
+                </button>
+              ) : (
+                services.length < total && (
+                  <button
+                    onClick={() => (onLoadMore ? onLoadMore() : fetchNextServices())}
+                    className="light_bg_color primary_text_color py-3 px-8 rounded-xl font-semibold hover:opacity-90 transition-opacity"
+                    disabled={isFetchingNextServices}
+                  >
+                    {t("loadMore")}
                   </button>
-                ) : (
-                  services.length < total && (
-                    <button
-                      onClick={() => (onLoadMore ? onLoadMore() : fetchNextServices())}
-                      className="light_bg_color primary_text_color py-3 px-8 rounded-xl font-semibold hover:opacity-90 transition-opacity"
-                      disabled={isFetchingNextServices}
-                    >
-                      {t("loadMore")}
-                    </button>
-                  )
-                )}
-              </div>
-            )}
+                )
+              )}
+            </div>
           </div>
         )}
       </div>
