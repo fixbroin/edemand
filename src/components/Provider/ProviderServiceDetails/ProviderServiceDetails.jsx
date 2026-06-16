@@ -43,6 +43,8 @@ import {
   openLoginModal,
 } from "@/redux/reducers/helperSlice";
 
+import StickyCartContinueButton from "@/components/Cart/StickyCartContinueButton";
+
 const ProviderServiceDetails = () => {
   const t = useTranslation();
   const dispatch = useDispatch();
@@ -479,7 +481,7 @@ const ProviderServiceDetails = () => {
         SecEleLink={`/provider-details/${providerId}`}
         thirdEleLink={`/provider-details/${providerId}/${serviceId}`}
       />
-      <section className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="container mx-auto px-4 sm:px-6 lg:px-8 pb-24">
         {Object.keys(serviceData).length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pb-6">
             {/* Left Section */}
@@ -965,6 +967,7 @@ const ProviderServiceDetails = () => {
         confirmText={t("continue")}
         cancelText={t("cancel")}
       />
+      <StickyCartContinueButton />
     </Layout>
   );
 };

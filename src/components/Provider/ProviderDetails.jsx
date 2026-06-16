@@ -29,6 +29,7 @@ import { useTranslation } from "../Layout/TranslationContext";
 import Share from "../ReUseableComponents/Share/Share";
 import OpenInAppDrawer from "../ReUseableComponents/Drawers/OpenInAppDrawer";
 import ProviderDetailsSkeleton from "../Skeletons/ProviderDetailsSkeleton";
+import StickyCartContinueButton from "../Cart/StickyCartContinueButton";
 import {
   useQuery,
   useInfiniteQuery,
@@ -310,7 +311,7 @@ const ProviderDetails = () => {
         SecEleLink={`/provider-details/${slug}`}
       />
       <section className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="pb-6">
+        <div className="pb-24">
           {/* Action Bar with Provider Info and Buttons */}
           <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 bg-white dark:bg-[#0F0F0F] p-4 rounded-xl border border-gray-100 dark:border-gray-800 shadow-sm">
             <div className="flex items-center gap-4 w-full md:w-auto">
@@ -459,6 +460,7 @@ const ProviderDetails = () => {
         OnHide={() => setIsOpenInApp(false)}
         systemSettingsData={settings}
       />
+      <StickyCartContinueButton />
     </Layout>
   );
 };
