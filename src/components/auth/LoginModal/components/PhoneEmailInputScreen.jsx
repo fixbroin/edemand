@@ -80,15 +80,17 @@ const PhoneEmailInputScreen = ({
 
     return (
         <>
-            <div className="flex flex-col gap-1 mb-6">
+            <div className="flex flex-col items-center text-center gap-1 mb-6">
                 {/* Welcome Text */}
                 <div className="text-2xl font-bold">{t("login")} / {t("register")}</div>
 
-                {isPhoneAuthEnabled && isEmailAuthEnabled
-                    ? t("enterYourNumberOrEmailToGetVerified") || "Enter your phone or email to get verified"
-                    : isEmailAuthEnabled
-                        ? t("enterYourEmailToGetVerified")
-                        : t("enterYourNumberToGetVerified")}
+                <div className="description_color">
+                    {isPhoneAuthEnabled && isEmailAuthEnabled
+                        ? t("enterYourNumberOrEmailToGetVerified") || "Enter your phone or email to get verified"
+                        : isEmailAuthEnabled
+                            ? t("enterYourEmailToGetVerified")
+                            : t("enterYourNumberToGetVerified")}
+                </div>
 
             </div>
 

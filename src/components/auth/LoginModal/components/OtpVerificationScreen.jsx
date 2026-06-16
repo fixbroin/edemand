@@ -53,29 +53,31 @@ const OtpVerificationScreen = ({
 
     return (
         <>
-            <div className="text-2xl font-bold mb-2">{t("verifyOTP")}</div>
-            <p className="description_color ">
-                {inputMode === INPUT_MODES.EMAIL
-                    ? t("weJustSentYouSixDigitCodeToEmail")
-                    : t("weJustSentYouSixDigitCode")}
-                <br />
-                <span
-                    className="font-bold"
-                    style={{ direction: "ltr", unicodeBidi: "isolate" }}
+            <div className="flex flex-col items-center text-center gap-1 mb-6">
+                <div className="text-2xl font-bold">{t("verifyOTP")}</div>
+                <p className="description_color ">
+                    {inputMode === INPUT_MODES.EMAIL
+                        ? t("weJustSentYouSixDigitCodeToEmail")
+                        : t("weJustSentYouSixDigitCode")}
+                    <br />
+                    <span
+                        className="font-bold"
+                        style={{ direction: "ltr", unicodeBidi: "isolate" }}
+                    >
+                        {showFullPhoneNumber}
+                    </span>
+                </p>
+                <a
+                    href="#"
+                    className="primary_text_color font-medium underline text-sm block"
+                    onClick={(e) => {
+                        e.preventDefault();
+                        onGoBack();
+                    }}
                 >
-                    {showFullPhoneNumber}
-                </span>
-            </p>
-            <a
-                href="#"
-                className="primary_text_color font-medium underline text-sm mb-4 block"
-                onClick={(e) => {
-                    e.preventDefault();
-                    onGoBack();
-                }}
-            >
-                {inputMode === INPUT_MODES.EMAIL ? t("wrongEmail") : t("wrongNumber")}
-            </a>
+                    {inputMode === INPUT_MODES.EMAIL ? t("wrongEmail") : t("wrongNumber")}
+                </a>
+            </div>
 
             {/* OTP Input using react-otp-input */}
             <div className="mb-4">

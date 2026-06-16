@@ -33,7 +33,7 @@ const PasswordLoginScreen = ({
 
     return (
         <>
-            <div className="flex flex-col gap-1 mb-6">
+            <div className="flex flex-col items-center text-center gap-1 mb-6">
                 <div className="text-2xl font-bold">{t("loginWithPassword")}</div>
                 <p className="description_color">{t("enterPasswordToLogin")}</p>
                 <p className="text-sm description_color mt-2">{showFullPhoneNumber}</p>

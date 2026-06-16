@@ -26,7 +26,7 @@ const ResetPasswordScreen = ({
 }) => {
     return (
         <>
-            <div className="flex flex-col gap-1 mb-6">
+            <div className="flex flex-col items-center text-center gap-1 mb-6">
                 <div className="text-2xl font-bold">{t("resetPassword")}</div>
                 <p className="description_color">{t("enterNewPassword")}</p>
             </div>
