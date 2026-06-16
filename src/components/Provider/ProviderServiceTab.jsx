@@ -293,7 +293,7 @@ const ProviderServiceTab = ({
                   key={cat.name}
                   onClick={(e) => onCategoryItemClick(e, cat.name)}
                   className={cn(
-                    "flex flex-col items-center gap-2 min-w-[100px] sm:min-w-[120px] p-2.5 rounded-xl transition-all duration-200 border min-h-[110px] justify-start",
+                    "flex flex-col items-center gap-2 w-[100px] sm:w-[120px] h-[115px] sm:h-[125px] flex-shrink-0 p-2.5 rounded-xl transition-all duration-200 border justify-start",
                     activeCategory === cat.name
                       ? "primary_bg_color border-transparent shadow-md"
                       : "light_bg_color border-transparent hover:border-primary/30"
