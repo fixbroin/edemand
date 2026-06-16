@@ -117,7 +117,7 @@ export default function App({ Component, pageProps }) {
                 </PushNotificationLayout>
               </TranslationProvider>
 
-              <Toaster position="bottom-right" />
+              <Toaster position="top-center" />
             </main>
           </ThemeProvider>
         </QueryProvider>
