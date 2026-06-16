@@ -487,12 +487,12 @@ const ProviderServiceDetails = () => {
             {/* Left Section */}
 
             <div className="col-span-12 lg:col-span-4 service-left-section">
-              <div className="service_image aspect-service sticky top-40">
+              <div className="service_image aspect-square sm:aspect-service sticky top-40 -mx-4 sm:mx-0">
                 <CustomImageTag
                   src={serviceData?.image_of_the_service}
                   alt={translatedServiceName}
-                  className="w-full aspect-service object-cover rounded-xl"
-                  imgClassName="rounded-xl"
+                  className="w-full aspect-square sm:aspect-service object-cover rounded-none sm:rounded-xl"
+                  imgClassName="rounded-none sm:rounded-xl"
                 />
               </div>
               <div></div>
