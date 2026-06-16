@@ -293,15 +293,15 @@ const ProviderServiceTab = ({
                   key={cat.name}
                   onClick={(e) => onCategoryItemClick(e, cat.name)}
                   className={cn(
-                    "flex flex-col items-center gap-2 min-w-[100px] sm:min-w-[120px] p-2.5 rounded-xl transition-all duration-200 border",
+                    "flex flex-col items-center gap-2 min-w-[100px] sm:min-w-[120px] p-2.5 rounded-xl transition-all duration-200 border min-h-[110px] justify-start",
                     activeCategory === cat.name
                       ? "primary_bg_color border-transparent shadow-md"
-                      : "bg-white dark:bg-white/5 border-gray-100 dark:border-gray-800 hover:border-primary/30"
+                      : "light_bg_color border-transparent hover:border-primary/30"
                   )}
                 >
                   <div className={cn(
                     "w-12 h-12 sm:w-14 sm:h-14 rounded-lg overflow-hidden flex-shrink-0",
-                    activeCategory === cat.name ? "bg-white/20" : "bg-gray-100 dark:bg-white/10"
+                    activeCategory === cat.name ? "bg-white/20" : "bg-white dark:bg-white/10"
                   )}>
                     <CustomImageTag
                       src={cat.image}
@@ -311,8 +311,8 @@ const ProviderServiceTab = ({
                     />
                   </div>
                   <span className={cn(
-                    "text-xs font-semibold text-center line-clamp-1 px-1",
-                    activeCategory === cat.name ? "text-white" : "text_color"
+                    "text-[12px] sm:text-xs font-semibold text-center line-clamp-2 px-1 leading-tight",
+                    activeCategory === cat.name ? "text-white" : "primary_text_color"
                   )}>
                     {cat.name}
                   </span>
