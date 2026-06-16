@@ -395,7 +395,7 @@ const AllProviders = () => {
         </div>
 
         {/* Providers List */}
-        <div className="commanDataSec light_bg_color p-4 w-full mt-6">
+        <div className="commanDataSec light_bg_color p-4 w-full mt-2">
           <div className="container mx-auto py-6">
             {shouldShowSkeleton ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

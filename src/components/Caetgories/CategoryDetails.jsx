@@ -51,30 +51,6 @@ const CategoryDetails = () => {
     ? currentCategoryTranslatedName
     : lastSlug;
 
-  // Query for subcategories
-  const { data: subCategoriesData, isLoading: isLoadingSubCategories } =
-    useQuery({
-      queryKey: buildLanguageAwareKey([
-        "subCategories",
-        locationData?.lat,
-        locationData?.lng,
-        lastSlug,
-      ]),
-      queryFn: async () => {
-        const response = await getSubCategory({
-          latitude: locationData?.lat,
-          longitude: locationData?.lng,
-          slug: lastSlug,
-        });
-        return response;
-      },
-      enabled:
-        !!locationData?.lat &&
-        !!locationData?.lng &&
-        !!lastSlug &&
-        router.isReady,
-    });
-
   // Query for providers
   const { data: providersData, isLoading: isLoadingProviders } = useQuery({
     queryKey: buildLanguageAwareKey([
@@ -138,79 +114,18 @@ const CategoryDetails = () => {
     }
   };
 
-  const breakpoints = {
-    320: { slidesPerView: 1 },
-    375: { slidesPerView: 1.5 },
-    576: { slidesPerView: 2 },
-    768: { slidesPerView: 2.5 },
-    992: { slidesPerView: 3 },
-    1200: { slidesPerView: 3.5 },
-    1400: { slidesPerView: 4 },
-    1600: { slidesPerView: 4.5 },
-  };
-
-  const isLoading = isLoadingSubCategories || isLoadingProviders;
-  const subCategories = subCategoriesData?.data || [];
-  const subCatTotal = subCategoriesData?.total || 0;
+  const isLoading = isLoadingProviders;
   const providers = providersData?.data || [];
   const providerstTotal = providersData?.total || 0;
 
   return (
     <Layout>
       <CategoryBreadcrumb selectedCategories={selectedCategories} />
-      <section className="category-details">
-        <div className="container mx-auto">
-          <div className="sub-cateSec">
-            {isLoadingSubCategories ||
-            (subCategories && subCategories.length > 0) ? (
-              <>
-                <div className="commanSec mt-12 flex flex-col items-start justify-center gap-6 w-full">
-                  <div className="Headlines flex flex-col w-full">
-                    <span className="text-2xl font-semibold">
-                      {t("categoriesIn")} {currentCategoryName}
-                    </span>
-                    <span className="description_color">
-                      {subCatTotal} {t("subCategories")}
-                    </span>
-                  </div>
-                </div>
-                <div className="sub-cate-swiper my-6">
-                  <Swiper
-                    key={isRTL}
-                    modules={[Autoplay, FreeMode, Navigation, Pagination]}
-                    pagination={{ clickable: true }}
-                    spaceBetween={30}
-                    loop={false}
-                    autoplay={{ delay: 3000 }}
-                    freeMode={true}
-                    breakpoints={breakpoints}
-                    dir={isRTL ? "rtl" : "ltr"}
-                    className="mySwiper"
-                  >
-                    {isLoadingSubCategories
-                      ? Array.from({ length: 5 }).map((_, index) => (
-                          <SwiperSlide key={`skeleton-${index}`}>
-                            <BlurredServiceCardSkeleton />
-                          </SwiperSlide>
-                        ))
-                      : subCategories?.map((service) => (
-                          <SwiperSlide key={service.id}>
-                            <BlurredServiceCard
-                              elem={service}
-                              handleRouteChange={handleRouteCategory}
-                            />
-                          </SwiperSlide>
-                        ))}
-                  </Swiper>
-                </div>
-              </>
-            ) : null}
-          </div>
-        </div>
+      <section className="category-details pb-4">
         <div className="providerSec">
           {isLoadingProviders || (providers && providers?.length > 0) ? (
             <>
-              <div className="commanSec mt-12 flex flex-col items-start justify-center gap-6 w-full container mx-auto">
+              <div className="commanSec mt-4 flex flex-col items-start justify-center gap-6 w-full container mx-auto">
                 <div className="Headlines flex flex-col w-full">
                   <span className="text-2xl font-semibold">
                     {t("providersIn")} {currentCategoryName}
@@ -221,7 +136,7 @@ const CategoryDetails = () => {
                   </span>
                 </div>
               </div>
-              <div className="commanDataSec light_bg_color p-4 w-full mt-6">
+              <div className="commanDataSec light_bg_color p-4 w-full mt-2">
                 <div className="container mx-auto py-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {isLoadingProviders
@@ -255,7 +170,7 @@ const CategoryDetails = () => {
         </div>
 
         {/* No Data Found */}
-        {!isLoading && !subCategories?.length && !providers?.length && (
+        {!isLoading && !providers?.length && (
           <div className="no-data-found my-12 flex flex-col items-center justify-center">
             <NoDataFound title={t("noDataFound")} desc={t("noDataFoundText")} />
           </div>

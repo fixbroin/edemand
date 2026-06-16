@@ -80,6 +80,7 @@ const NearbyProviderCard = ({ provider, isBookmark, handleRemoveBookMark }) => {
             </div>
           )}
         </div>
+
         {isBookmark ? (
           <div
             className="primary_text_color"
@@ -114,6 +115,14 @@ const NearbyProviderCard = ({ provider, isBookmark, handleRemoveBookMark }) => {
             </div>
           </div>
         )}
+      </div>
+
+      {/* New Dedicated Row for Service Prompt */}
+      <div className="mt-3 pt-3 border-t border_color flex items-center justify-center bg-gray-50/50 dark:bg-gray-800/20 rounded-b-2xl -mx-4 -mb-4 py-2 group-hover:bg-primary/5 transition-colors">
+         <span className="text-xs sm:text-sm font-bold primary_text_color uppercase tracking-widest flex items-center gap-2">
+            Click to see services
+            <FaAngleRight className={isRTL ? "rotate-180" : ""} />
+         </span>
       </div>
     </div>
   );

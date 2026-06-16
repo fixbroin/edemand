@@ -46,7 +46,7 @@ const BreadCrumb = ({
     );
 
   return (
-    <div className="custom-breadcrumb py-4 my-6 light_bg_color">
+    <div className="custom-breadcrumb py-2 my-1 light_bg_color">
       <div className="container mx-auto">
         <Breadcrumb className="flex flex-wrap items-center gap-1 sm:gap-2 [&_li]:list-none [&_ol]:list-none">
           {/* Home Breadcrumb */}
