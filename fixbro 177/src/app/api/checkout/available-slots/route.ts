@@ -1,0 +1,475 @@
+
+import { NextRequest, NextResponse } from 'next/server';
+import { adminDb } from '@/lib/firebaseAdmin';
+import { AppSettings, FirestoreService, FirestoreSubCategory, TimeSlotCategoryLimit, FirestoreBooking } from '@/types/firestore';
+import { defaultAppSettings } from '@/config/appDefaults';
+import { getZonedDate, formatZonedDateToISO, convertWallClockToUTC } from '@/lib/utils';
+
+interface CartEntry {
+  serviceId: string;
+  quantity: number;
+}
+
+const DEFAULT_SLOT_INTERVAL_MINUTES = defaultAppSettings.timeSlotSettings.slotIntervalMinutes;
+const DEFAULT_ENABLE_LIMIT_LATE_BOOKINGS = defaultAppSettings.enableLimitLateBookings;
+const DEFAULT_HOURS_WHEN_LIMIT_ENABLED = defaultAppSettings.limitLateBookingHours;
+
+// --- Performance Cache ---
+// Module-level cache for schedule simulation results
+// Keyed by date range, bookings hash, and limits hash
+const BUSY_MAP_CACHE = new Map<string, Map<string, Record<string, number>>>();
+const MAX_CACHE_SIZE = 100;
+
+// --- Helper Functions ---
+
+const getServiceDurationInMinutes = (service: FirestoreService): number => {
+    if (!service.taskTimeValue || !service.taskTimeUnit) return 0;
+    if (service.taskTimeUnit === 'hours') {
+        return service.taskTimeValue * 60;
+    }
+    return service.taskTimeValue;
+};
+
+const parseTimeToMinutes = (timeStr: string): number => {
+    if (!timeStr || !timeStr.includes(':')) return 0;
+    const timeMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+    if (timeMatch) {
+      let hours = parseInt(timeMatch[1], 10);
+      const minutes = parseInt(timeMatch[2], 10);
+      const period = timeMatch[3].toUpperCase();
+      if (period === 'PM' && hours < 12) hours += 12;
+      if (period === 'AM' && hours === 12) hours = 0;
+      return hours * 60 + minutes;
+    }
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+};
+
+const formatTimeFromMinutes = (totalMinutes: number): string => {
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    const period = hours >= 12 && hours < 24 ? 'PM' : 'AM';
+    let displayHours = hours % 12;
+    if (displayHours === 0) displayHours = 12;
+    return `${String(displayHours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} ${period}`;
+};
+
+const getDayName = (date: Date, timeZone: string = 'Asia/Kolkata'): keyof AppSettings['timeSlotSettings']['weeklyAvailability'] => {
+    // Robust way to get weekday name in a specific timezone
+    return new Intl.DateTimeFormat('en-US', { weekday: 'long', timeZone }).format(date).toLowerCase() as any;
+};
+
+const getSlotKey = (dateISO: string, minutes: number) => `${dateISO}:${minutes}`;
+
+/**
+ * Calculates the EXACT end date and time for a booking,
+ * respecting working hours and multi-day spillovers.
+ */
+function calculateEndDateTime(
+    startDateISO: string,
+    startMinutes: number,
+    workDuration: number,
+    bufferDuration: number,
+    appConfig: AppSettings
+): string {
+    const timezone = appConfig.timezone || 'Asia/Kolkata';
+    let remainingMinutes = workDuration + bufferDuration;
+    let currentMinutes = startMinutes;
+    
+    // Parse the date as UTC midnight to start, then we'll advance it
+    const [y, m, d] = startDateISO.split('-').map(Number);
+    const currentDate = new Date(Date.UTC(y, m - 1, d, 0, 0, 0)); 
+    
+    let daysSearched = 0;
+    while (remainingMinutes > 0 && daysSearched < 30) {
+        // We use a date at 12:00 UTC to safely get the day name in the target timezone without DST or offset overlap issues
+        const sampleDate = new Date(currentDate.getTime() + (12 * 60 * 60 * 1000));
+        let dayName = getDayName(sampleDate, timezone);
+        let dayAvailability = appConfig.timeSlotSettings?.weeklyAvailability[dayName] || defaultAppSettings.timeSlotSettings.weeklyAvailability[dayName];
+
+        let loopGuard = 0;
+        while (!dayAvailability.isEnabled && loopGuard < 7) {
+            currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+            const nextSample = new Date(currentDate.getTime() + (12 * 60 * 60 * 1000));
+            dayName = getDayName(nextSample, timezone);
+            dayAvailability = appConfig.timeSlotSettings?.weeklyAvailability[dayName] || defaultAppSettings.timeSlotSettings.weeklyAvailability[dayName];
+            currentMinutes = parseTimeToMinutes(dayAvailability.startTime);
+            loopGuard++;
+        }
+        if (loopGuard >= 7) break; 
+
+        const dayStart = parseTimeToMinutes(dayAvailability.startTime);
+        const dayEnd = parseTimeToMinutes(dayAvailability.endTime);
+
+        if (currentMinutes < dayStart) currentMinutes = dayStart;
+
+        const minutesAvailableToday = dayEnd - currentMinutes;
+
+        if (minutesAvailableToday <= 0) {
+            currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+            const nextSample = new Date(currentDate.getTime() + (12 * 60 * 60 * 1000));
+            const nextDayName = getDayName(nextSample, timezone);
+            const nextDayAvail = appConfig.timeSlotSettings?.weeklyAvailability[nextDayName] || defaultAppSettings.timeSlotSettings.weeklyAvailability[nextDayName];
+            currentMinutes = parseTimeToMinutes(nextDayAvail.startTime);
+            daysSearched++;
+            continue;
+        }
+
+        if (remainingMinutes <= minutesAvailableToday) {
+            currentMinutes += remainingMinutes;
+            remainingMinutes = 0;
+        } else {
+            remainingMinutes -= minutesAvailableToday;
+            currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+            const nextSample = new Date(currentDate.getTime() + (12 * 60 * 60 * 1000));
+            const nextDayName = getDayName(nextSample, timezone);
+            const nextDayAvail = appConfig.timeSlotSettings?.weeklyAvailability[nextDayName] || defaultAppSettings.timeSlotSettings.weeklyAvailability[nextDayName];
+            currentMinutes = parseTimeToMinutes(nextDayAvail.startTime);
+        }
+        daysSearched++;
+    }
+    
+    // Construct final result by combining the date components and the final minutes
+    const finalDateStr = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD
+    const finalHours = Math.floor(currentMinutes / 60);
+    const finalMins = currentMinutes % 60;
+    
+    // Create a date string that represents the wall-clock time in the target timezone
+    // "YYYY-MM-DDTHH:mm:ss" - then we'll convert it to absolute UTC
+    const wallClockDate = new Date(`${finalDateStr}T${String(finalHours).padStart(2, '0')}:${String(finalMins).padStart(2, '0')}:00`);
+    return convertWallClockToUTC(wallClockDate, timezone).toISOString();
+}
+
+/**
+ * Simulates a continuous timeline of work across multiple days.
+ * Yields every slot interval that has any overlap with the Work + Buffer range.
+ */
+function* simulateProgression(
+    startDateISO: string,
+    startMinutes: number,
+    workDuration: number,
+    bufferDuration: number,
+    appConfig: AppSettings
+) {
+    const timezone = appConfig.timezone || 'Asia/Kolkata';
+    let remainingMinutesToBlock = workDuration;
+    let bufferRemaining = bufferDuration;
+    let isWorkCompleted = false;
+    let currentMinutes = startMinutes;
+    
+    const [y, m, d] = startDateISO.split('-').map(Number);
+    const currentDate = new Date(Date.UTC(y, m - 1, d, 0, 0, 0));
+    
+    const slotInterval = appConfig.timeSlotSettings?.slotIntervalMinutes || DEFAULT_SLOT_INTERVAL_MINUTES;
+
+    let daysSearched = 0;
+    while (remainingMinutesToBlock > 0 && daysSearched < 30) {
+        let dateISO = currentDate.toISOString().split('T')[0];
+        const sampleDate = new Date(currentDate.getTime() + (12 * 60 * 60 * 1000));
+        let dayName = getDayName(sampleDate, timezone);
+        let dayAvailability = appConfig.timeSlotSettings?.weeklyAvailability[dayName] || defaultAppSettings.timeSlotSettings.weeklyAvailability[dayName];
+
+        let loopGuard = 0;
+        while (!dayAvailability.isEnabled && loopGuard < 7) {
+            currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+            dateISO = currentDate.toISOString().split('T')[0];
+            const nextSample = new Date(currentDate.getTime() + (12 * 60 * 60 * 1000));
+            dayName = getDayName(nextSample, timezone);
+            dayAvailability = appConfig.timeSlotSettings?.weeklyAvailability[dayName] || defaultAppSettings.timeSlotSettings.weeklyAvailability[dayName];
+            currentMinutes = parseTimeToMinutes(dayAvailability.startTime);
+            loopGuard++;
+        }
+        if (loopGuard >= 7) break;
+
+        const dayStart = parseTimeToMinutes(dayAvailability.startTime);
+        const dayEnd = parseTimeToMinutes(dayAvailability.endTime);
+
+        if (currentMinutes < dayStart) currentMinutes = dayStart;
+
+        if (currentMinutes >= dayEnd) {
+            currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+            const nextSample = new Date(currentDate.getTime() + (12 * 60 * 60 * 1000));
+            const nextDayName = getDayName(nextSample, timezone);
+            const nextDayAvail = appConfig.timeSlotSettings?.weeklyAvailability[nextDayName] || defaultAppSettings.timeSlotSettings.weeklyAvailability[nextDayName];
+            currentMinutes = parseTimeToMinutes(nextDayAvail.startTime);
+            daysSearched++;
+            continue;
+        }
+
+        const minutesAvailableToday = dayEnd - currentMinutes;
+        const minutesToConsumeToday = Math.min(minutesAvailableToday, remainingMinutesToBlock);
+        
+        const segmentStart = currentMinutes;
+        const segmentEnd = currentMinutes + minutesToConsumeToday;
+
+        let slotStart = dayStart;
+        while (slotStart < segmentEnd) {
+            if (slotStart + slotInterval > segmentStart) {
+                yield { dateISO, minutes: slotStart };
+            }
+            slotStart += slotInterval;
+        }
+
+        // Move time forward
+        remainingMinutesToBlock -= minutesToConsumeToday;
+        currentMinutes += minutesToConsumeToday;
+
+        if (!isWorkCompleted && remainingMinutesToBlock <= 0) {
+            isWorkCompleted = true;
+            const minutesLeftToday = dayEnd - currentMinutes;
+            if (minutesLeftToday > 0) {
+                remainingMinutesToBlock = Math.min(bufferRemaining, minutesLeftToday);
+            } else {
+                remainingMinutesToBlock = 0;
+            }
+        }
+
+        if (currentMinutes >= dayEnd) {
+            if (isWorkCompleted) {
+                remainingMinutesToBlock = 0; 
+                break;
+            }
+
+            currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+            const nextSample = new Date(currentDate.getTime() + (12 * 60 * 60 * 1000));
+            const nextDayName = getDayName(nextSample, timezone);
+            const nextDayAvail = appConfig.timeSlotSettings?.weeklyAvailability[nextDayName] || defaultAppSettings.timeSlotSettings.weeklyAvailability[nextDayName];
+            currentMinutes = parseTimeToMinutes(nextDayAvail.startTime);
+            daysSearched++;
+        }
+    }
+}
+
+export async function POST(req: NextRequest) {
+    try {
+        const { selectedDate, cartEntries } = await req.json();
+
+        if (!selectedDate || !cartEntries) {
+            return NextResponse.json({ error: "Missing required parameters." }, { status: 400 });
+        }
+
+        // Fetch config first to get timezone
+        const appConfigSnap = await adminDb.collection("webSettings").doc("applicationConfig").get();
+        const appConfig = (appConfigSnap.exists ? appConfigSnap.data() : defaultAppSettings) as AppSettings;
+        const timezone = appConfig.timezone || 'Asia/Kolkata';
+
+        // Robust parsing: Extract "YYYY-MM-DD" part even if it's a full ISO string
+        let dateStr = selectedDate;
+        if (selectedDate.includes('T')) {
+            dateStr = formatZonedDateToISO(new Date(selectedDate), timezone);
+        }
+
+        const dateParts = dateStr.split('-');
+        if (dateParts.length < 3) {
+            return NextResponse.json({ error: "Invalid date format. Expected YYYY-MM-DD." }, { status: 400 });
+        }
+
+        const y = parseInt(dateParts[0], 10);
+        const m = parseInt(dateParts[1], 10);
+        const d = parseInt(dateParts[2], 10);
+
+        if (isNaN(y) || isNaN(m) || isNaN(d)) {
+            return NextResponse.json({ error: "Invalid date components." }, { status: 400 });
+        }
+
+        const dateObj = new Date(Date.UTC(y, m - 1, d, 0, 0, 0)); 
+        const dateISO = formatZonedDateToISO(dateObj, timezone);
+
+        const lookBackDate = new Date(dateObj);
+        lookBackDate.setDate(lookBackDate.getDate() - 7);
+        const lookBackISO = formatZonedDateToISO(lookBackDate, timezone);
+
+        const [limitsSnap, servicesSnap, subCatsSnap, bookingsSnap] = await Promise.all([
+            adminDb.collection("timeSlotCategoryLimits").get(),
+            adminDb.collection("adminServices").get(),
+            adminDb.collection("adminSubCategories").get(),
+            adminDb.collection("bookings")
+                .where("scheduledDate", ">=", lookBackISO)
+                .where("scheduledDate", "<=", dateISO) 
+                .get()
+        ]);
+
+        const limitsData = Object.fromEntries(limitsSnap.docs.map(doc => [doc.data().categoryId, { id: doc.id, ...doc.data() } as TimeSlotCategoryLimit]));
+        const servicesData = Object.fromEntries(servicesSnap.docs.map(doc => [doc.id, { id: doc.id, ...doc.data() } as FirestoreService]));
+        const subCatsData = Object.fromEntries(subCatsSnap.docs.map(doc => [doc.id, { id: doc.id, ...doc.data() } as FirestoreSubCategory]));
+        const existingBookings = bookingsSnap.docs.map(doc => doc.data() as FirestoreBooking);
+
+        const slotInterval = appConfig.timeSlotSettings?.slotIntervalMinutes || DEFAULT_SLOT_INTERVAL_MINUTES;
+        const breakTimeMinutes = appConfig.timeSlotSettings?.breakTimeMinutes || 0;
+        const enableLimitLateBookings = appConfig.enableLimitLateBookings ?? DEFAULT_ENABLE_LIMIT_LATE_BOOKINGS;
+        const limitLateBookingHours = enableLimitLateBookings ? (appConfig.limitLateBookingHours ?? DEFAULT_HOURS_WHEN_LIMIT_ENABLED) : 0;
+        const weeklyAvailability = appConfig.timeSlotSettings?.weeklyAvailability || defaultAppSettings.timeSlotSettings.weeklyAvailability;
+
+        const uniqueCartCategoryIds = new Set<string>();
+        let totalCartDuration = 0;
+        cartEntries.forEach((entry: CartEntry) => {
+            const service = servicesData[entry.serviceId];
+            if (service) {
+                totalCartDuration += getServiceDurationInMinutes(service) * entry.quantity;
+                const subCat = subCatsData[service.subCategoryId];
+                if (subCat?.parentId) uniqueCartCategoryIds.add(subCat.parentId);
+            }
+        });
+        const cartCategoryIds = Array.from(uniqueCartCategoryIds);
+
+        // --- Cache Logic Start ---
+        // Generate a composite hash to invalidate cache if any relevant data changes
+        const bookingsHash = bookingsSnap.docs
+            .map(doc => `${doc.id}_${doc.updateTime?.toMillis() || 0}`)
+            .sort()
+            .join('|');
+            
+        const limitsHash = Object.values(limitsData)
+            .map((l: any) => `${l.categoryId}_${l.maxConcurrentBookings}`)
+            .sort()
+            .join('|');
+            
+        const cacheKey = `${lookBackISO}_${dateISO}_${bookingsHash}_${limitsHash}_${appConfig.updatedAt?.toMillis() || 0}_${breakTimeMinutes}`;
+        
+        let globalBusyMap: Map<string, Record<string, number>>;
+
+        if (BUSY_MAP_CACHE.has(cacheKey)) {
+            globalBusyMap = BUSY_MAP_CACHE.get(cacheKey)!;
+        } else {
+            // Cache Miss: Run Simulation
+            globalBusyMap = new Map<string, Record<string, number>>();
+
+            existingBookings.forEach(booking => {
+                let bookingWorkDuration = 0;
+                const bookingCategoryIds = new Set<string>();
+
+                booking.services.forEach(item => {
+                    const serviceDetail = servicesData[item.serviceId];
+                    if (serviceDetail) {
+                        bookingWorkDuration += getServiceDurationInMinutes(serviceDetail) * item.quantity;
+                        const subCat = subCatsData[serviceDetail.subCategoryId];
+                        if (subCat?.parentId) bookingCategoryIds.add(subCat.parentId);
+                    }
+                });
+
+                const startMin = parseTimeToMinutes(booking.scheduledTimeSlot);
+                const progression = simulateProgression(
+                    booking.scheduledDate,
+                    startMin,
+                    bookingWorkDuration,
+                    breakTimeMinutes, // ✅ Restore buffer blocking for existing bookings
+                    appConfig
+                );
+
+                for (const step of progression) {
+                    const key = getSlotKey(step.dateISO, step.minutes);
+                    const counts = globalBusyMap.get(key) || {};
+                    
+                    bookingCategoryIds.forEach(catId => {
+                        counts[catId] = (counts[catId] || 0) + 1;
+                    });
+                    
+                    globalBusyMap.set(key, counts);
+                }
+            });
+
+            // Store in cache
+            if (BUSY_MAP_CACHE.size >= MAX_CACHE_SIZE) {
+                const firstKey = BUSY_MAP_CACHE.keys().next().value; // Simple eviction: clear all if too big 
+                if (firstKey !== undefined) {
+                    BUSY_MAP_CACHE.delete(firstKey);
+                }
+            }
+            BUSY_MAP_CACHE.set(cacheKey, globalBusyMap);
+        }
+        // --- Cache Logic End ---
+
+        const selectedDayName = getDayName(dateObj, timezone);
+        const selectedDayAvail = weeklyAvailability[selectedDayName];
+        if (!selectedDayAvail?.isEnabled) {
+            return NextResponse.json({ availableTimeSlots: [], totalCartDuration });
+        }
+
+        const now = getZonedDate(new Date(), timezone);
+        const earliestBookableTime = new Date(now.getTime() + (limitLateBookingHours * 60 * 60 * 1000));
+        const dayStartMinutes = parseTimeToMinutes(selectedDayAvail.startTime);
+        const dayEndMinutes = parseTimeToMinutes(selectedDayAvail.endTime);
+
+        const availableSlots: { slot: string; remainingCapacity: number, endDateTime: string }[] = [];
+
+        let potentialStart = dayStartMinutes;
+        while (potentialStart < dayEndMinutes) {
+            // Construct slotDateTime in target timezone
+            const slotDateTime = getZonedDate(new Date(selectedDate), timezone);
+            slotDateTime.setHours(Math.floor(potentialStart / 60), potentialStart % 60, 0, 0);
+
+            if (slotDateTime < earliestBookableTime) {
+                potentialStart += slotInterval;
+                continue;
+            }
+
+            // 🚨 MULTI-DAY SERVICE RESTRICTION
+
+const totalWorkingMinutesInDay = dayEndMinutes - dayStartMinutes;
+
+if (totalCartDuration > totalWorkingMinutesInDay) {
+    // Only allow starting at beginning of day
+    if (potentialStart !== dayStartMinutes) {
+        potentialStart += slotInterval;
+        continue;
+    }
+}
+// 🚨 LONG SERVICE RESTRICTION (FULL-DAY FIX)
+
+const FULL_DAY_THRESHOLD = 6 * 60; // 6 hours (adjust if needed)
+
+const remainingMinutesToday = dayEndMinutes - potentialStart;
+
+// If long service and not enough time today → skip this slot
+
+
+if (
+    totalCartDuration >= FULL_DAY_THRESHOLD &&
+    totalCartDuration <= totalWorkingMinutesInDay && // ✅ IMPORTANT
+    remainingMinutesToday < totalCartDuration
+) {
+    potentialStart += slotInterval;
+    continue;
+}
+            let isPathClear = true;
+            let minRemainingCapacity = Infinity;
+
+            const pathSteps = Array.from( simulateProgression(dateISO, potentialStart, totalCartDuration, breakTimeMinutes, appConfig) );
+            
+            for (const step of pathSteps) {
+                const key = getSlotKey(step.dateISO, step.minutes);
+                const counts = globalBusyMap.get(key) || {};
+
+                for (const catId of cartCategoryIds) {
+                    const limit = limitsData[catId]?.maxConcurrentBookings || 1;
+                    const currentBookings = counts[catId] || 0;
+                    const remaining = limit - currentBookings;
+                    
+                    minRemainingCapacity = Math.min(minRemainingCapacity, remaining);
+                    if (remaining <= 0) {
+                        isPathClear = false;
+                        break;
+                    }
+                }
+                if (!isPathClear) break;
+            }
+
+            if (isPathClear) {
+                // FIXED: Include breakTimeMinutes in endDateTime for UI transparency
+                const endDateTime = calculateEndDateTime(dateISO, potentialStart, totalCartDuration, 0, appConfig);
+                availableSlots.push({ 
+                    slot: formatTimeFromMinutes(potentialStart), 
+                    remainingCapacity: minRemainingCapacity,
+                    endDateTime: endDateTime
+                });
+            }
+
+            potentialStart += slotInterval;
+        }
+
+        return NextResponse.json({ availableTimeSlots: availableSlots, totalCartDuration });
+    } catch (error) {
+        console.error("Continuous Multi-day API Error:", error);
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    }
+}
