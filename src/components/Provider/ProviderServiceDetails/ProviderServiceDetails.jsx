@@ -487,12 +487,23 @@ const ProviderServiceDetails = () => {
             {/* Left Section */}
 
             <div className="col-span-12 lg:col-span-4 service-left-section">
-              <div className="service_image aspect-square sm:aspect-service sticky top-40 -mx-4 sm:mx-0">
+              {/* Mobile Image (Full Width & Square) */}
+              <div className="block md:hidden -mx-4 sm:-mx-6 w-[calc(100%+32px)] sm:w-[calc(100%+48px)] aspect-square mb-6">
                 <CustomImageTag
                   src={serviceData?.image_of_the_service}
                   alt={translatedServiceName}
-                  className="w-full aspect-square sm:aspect-service object-cover rounded-none sm:rounded-xl"
-                  imgClassName="rounded-none sm:rounded-xl"
+                  className="w-full h-full object-cover"
+                  imgClassName="w-full h-full object-cover"
+                />
+              </div>
+
+              {/* Desktop Image */}
+              <div className="hidden md:block service_image aspect-service sticky top-40">
+                <CustomImageTag
+                  src={serviceData?.image_of_the_service}
+                  alt={translatedServiceName}
+                  className="w-full h-full object-cover rounded-xl"
+                  imgClassName="rounded-xl object-cover w-full h-full"
                 />
               </div>
               <div></div>
