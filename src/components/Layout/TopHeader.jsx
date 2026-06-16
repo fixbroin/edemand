@@ -358,7 +358,7 @@ const TopHeader = () => {
           </motion.div>
         )}
       </AnimatePresence>
-      <div className="hidden lg:block primary_bg_color text-white py-2 px-2 md:px-4 top-header">
+      <div className="hidden lg:block primary_bg_color text-white py-1 px-1 md:px-2 top-header">
         <div className="container mx-auto">
           <div className="flex gap-4 md:gap-1 justify-between w-full items-center md:space-y-0">
             <div className="hidden md:flex items-center justify-center gap-2">
