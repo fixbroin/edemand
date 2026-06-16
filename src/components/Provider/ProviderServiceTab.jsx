@@ -242,7 +242,7 @@ const ProviderServiceTab = ({
       <Dialog open={isSearchModalOpen} onOpenChange={setIsSearchModalOpen}>
         <DialogTrigger asChild>
           <button
-            className="fixed bottom-10 right-6 sm:right-10 z-[60] w-14 h-14 primary_bg_color text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95 group"
+            className="fixed top-20 right-6 sm:right-10 z-[60] w-14 h-14 primary_bg_color text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95 group"
             aria-label={t("searchService")}
           >
             <FaSearch size={20} className="group-hover:rotate-12 transition-transform" />
