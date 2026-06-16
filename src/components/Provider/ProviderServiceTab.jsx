@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FaSearch } from "react-icons/fa";
+import { FaSearch, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { MdClose } from "react-icons/md";
 import ProviderDetailsServiceCard from "./ProviderDetailsServiceCard";
 import MiniLoader from "../ReUseableComponents/MiniLoader";
@@ -36,6 +36,75 @@ const ProviderServiceTab = ({
   const requestIdRef = useRef(0);
   const debouncedTermRef = useRef("");
   const categoryRefs = useRef({});
+  const carouselRef = useRef(null);
+
+  // Scroll visibility state
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  // Mouse drag-to-scroll state
+  const isDraggingRef = useRef(false);
+  const startXRef = useRef(0);
+  const scrollLeftRef = useRef(0);
+  const dragDistanceRef = useRef(0);
+
+  const isSearchActive = searchTerm.trim().length > 0;
+
+  // Group services by category
+  const groupedServices = useMemo(() => {
+    if (isSearchActive) {
+      return {
+        [t("searchResults")]: {
+          name: t("searchResults"),
+          items: searchResults,
+        },
+      };
+    }
+
+    const groups = {};
+    services.forEach((service) => {
+      const catName = service.translated_category_name || service.category_name || t("otherServices");
+      if (!groups[catName]) {
+        groups[catName] = {
+          name: catName,
+          // Use service image as preference for subcategory icon as requested
+          image: service.image_of_the_service || service.category_image,
+          items: [],
+        };
+      }
+      groups[catName].items.push(service);
+    });
+    return groups;
+  }, [isSearchActive, searchResults, services, t]);
+
+  const categories = useMemo(() => Object.values(groupedServices), [groupedServices]);
+
+  const checkScroll = () => {
+    if (carouselRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = carouselRef.current;
+      setCanScrollLeft(scrollLeft > 5);
+      setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 5);
+    }
+  };
+
+  useEffect(() => {
+    const carousel = carouselRef.current;
+    if (carousel) {
+      checkScroll();
+      carousel.addEventListener("scroll", checkScroll);
+      window.addEventListener("resize", checkScroll);
+      return () => {
+        carousel.removeEventListener("scroll", checkScroll);
+        window.removeEventListener("resize", checkScroll);
+      };
+    }
+  }, [categories]);
+
+  useEffect(() => {
+    if (categories.length > 0 && !activeCategory) {
+      setActiveCategory(categories[0].name);
+    }
+  }, [categories, activeCategory]);
 
   useEffect(() => {
     const trimmed = searchTerm.trim();
@@ -84,52 +153,68 @@ const ProviderServiceTab = ({
     })();
   }, [debouncedTerm, slug]);
 
-  const isSearchActive = searchTerm.trim().length > 0;
+  const handleMouseDown = (e) => {
+    if (!carouselRef.current) return;
+    isDraggingRef.current = true;
+    carouselRef.current.classList.add("cursor-grabbing");
+    carouselRef.current.classList.remove("cursor-grab");
+    startXRef.current = e.pageX - carouselRef.current.offsetLeft;
+    scrollLeftRef.current = carouselRef.current.scrollLeft;
+    dragDistanceRef.current = 0;
+  };
 
-  // Group services by category
-  const groupedServices = useMemo(() => {
-    if (isSearchActive) {
-      return {
-        [t("searchResults")]: {
-          name: t("searchResults"),
-          items: searchResults,
-        },
-      };
-    }
+  const handleMouseLeave = () => {
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+    carouselRef.current?.classList.remove("cursor-grabbing");
+    carouselRef.current?.classList.add("cursor-grab");
+  };
 
-    const groups = {};
-    services.forEach((service) => {
-      const catName = service.translated_category_name || service.category_name || t("otherServices");
-      if (!groups[catName]) {
-        groups[catName] = {
-          name: catName,
-          image: service.category_image,
-          items: [],
-        };
-      }
-      groups[catName].items.push(service);
-    });
-    return groups;
-  }, [isSearchActive, searchResults, services, t]);
+  const handleMouseUp = (e) => {
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+    carouselRef.current?.classList.remove("cursor-grabbing");
+    carouselRef.current?.classList.add("cursor-grab");
+  };
 
-  const categories = useMemo(() => Object.values(groupedServices), [groupedServices]);
-
-  useEffect(() => {
-    if (categories.length > 0 && !activeCategory) {
-      setActiveCategory(categories[0].name);
-    }
-  }, [categories, activeCategory]);
+  const handleMouseMove = (e) => {
+    if (!isDraggingRef.current || !carouselRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - carouselRef.current.offsetLeft;
+    const walk = (x - startXRef.current) * 2; // Scroll speed multiplier
+    carouselRef.current.scrollLeft = scrollLeftRef.current - walk;
+    dragDistanceRef.current = Math.abs(x - startXRef.current);
+  };
 
   const handleCategoryClick = (categoryName) => {
     setActiveCategory(categoryName);
     const element = categoryRefs.current[categoryName];
     if (element) {
-      const headerOffset = 180; // Adjusted for sticky header + category bar
+      const headerOffset = 100; // Adjusted for non-sticky header
       const elementPosition = element.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
       window.scrollTo({
         top: offsetPosition,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  const onCategoryItemClick = (e, catName) => {
+    // If the mouse was moved significantly, it was a drag, not a click
+    if (dragDistanceRef.current > 5) {
+      e.preventDefault();
+      return;
+    }
+    handleCategoryClick(catName);
+  };
+
+  const scrollCarousel = (direction) => {
+    if (carouselRef.current) {
+      const scrollAmount = 300;
+      carouselRef.current.scrollBy({
+        left: direction === "left" ? -scrollAmount : scrollAmount,
         behavior: "smooth",
       });
     }
@@ -158,7 +243,7 @@ const ProviderServiceTab = ({
   return (
     <div className="relative">
       {/* Search bar */}
-      <div className="sticky top-0 z-30 bg-white dark:bg-[#0F0F0F] pt-2 pb-3">
+      <div className="bg-white dark:bg-[#0F0F0F] pt-2 pb-3">
         <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-white/5 transition-colors duration-200">
           <FaSearch size={14} className="description_color shrink-0" />
           <input
@@ -183,37 +268,68 @@ const ProviderServiceTab = ({
 
         {/* Subcategory Carousel */}
         {!isSearchActive && categories.length > 1 && (
-          <div className="mt-4 overflow-x-auto scrollbar-none flex items-center gap-3 pb-1">
-            {categories.map((cat) => (
+          <div className="relative group/carousel mt-4">
+            {/* Left Scroll Button */}
+            {canScrollLeft && (
               <button
-                key={cat.name}
-                onClick={() => handleCategoryClick(cat.name)}
-                className={cn(
-                  "flex flex-col items-center gap-2 min-w-[80px] sm:min-w-[100px] p-2 rounded-xl transition-all duration-200 border",
-                  activeCategory === cat.name
-                    ? "primary_bg_color border-transparent shadow-md"
-                    : "bg-white dark:bg-white/5 border-gray-100 dark:border-gray-800 hover:border-primary/30"
-                )}
+                onClick={() => scrollCarousel("left")}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-10 p-2.5 bg-primary/10 dark:bg-primary/20 backdrop-blur-sm shadow-sm rounded-full flex items-center justify-center border border-primary/20 -ml-2 sm:-ml-4 transition-all hover:bg-primary hover:text-white group/btn"
+                aria-label="Scroll Left"
               >
-                <div className={cn(
-                  "w-10 h-10 sm:w-12 sm:h-12 rounded-lg overflow-hidden flex-shrink-0",
-                  activeCategory === cat.name ? "bg-white/20" : "bg-gray-100 dark:bg-white/10"
-                )}>
-                  <CustomImageTag
-                    src={cat.image}
-                    alt={cat.name}
-                    className="w-full h-full object-cover"
-                    imgClassName="w-full h-full object-cover"
-                  />
-                </div>
-                <span className={cn(
-                  "text-[10px] sm:text-xs font-semibold text-center line-clamp-1 px-1",
-                  activeCategory === cat.name ? "text-white" : "text_color"
-                )}>
-                  {cat.name}
-                </span>
+                <FaChevronLeft size={14} className="primary_text_color group-hover/btn:text-white" />
               </button>
-            ))}
+            )}
+
+            <div
+              ref={carouselRef}
+              onMouseDown={handleMouseDown}
+              onMouseLeave={handleMouseLeave}
+              onMouseUp={handleMouseUp}
+              onMouseMove={handleMouseMove}
+              className="overflow-x-auto scrollbar-none flex items-center gap-3 pb-1 cursor-grab"
+            >
+              {categories.map((cat) => (
+                <button
+                  key={cat.name}
+                  onClick={(e) => onCategoryItemClick(e, cat.name)}
+                  className={cn(
+                    "flex flex-col items-center gap-2 min-w-[100px] sm:min-w-[120px] p-2.5 rounded-xl transition-all duration-200 border",
+                    activeCategory === cat.name
+                      ? "primary_bg_color border-transparent shadow-md"
+                      : "bg-white dark:bg-white/5 border-gray-100 dark:border-gray-800 hover:border-primary/30"
+                  )}
+                >
+                  <div className={cn(
+                    "w-12 h-12 sm:w-14 sm:h-14 rounded-lg overflow-hidden flex-shrink-0",
+                    activeCategory === cat.name ? "bg-white/20" : "bg-gray-100 dark:bg-white/10"
+                  )}>
+                    <CustomImageTag
+                      src={cat.image}
+                      alt={cat.name}
+                      className="w-full h-full object-cover"
+                      imgClassName="w-full h-full object-cover"
+                    />
+                  </div>
+                  <span className={cn(
+                    "text-xs font-semibold text-center line-clamp-1 px-1",
+                    activeCategory === cat.name ? "text-white" : "text_color"
+                  )}>
+                    {cat.name}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* Right Scroll Button */}
+            {canScrollRight && (
+              <button
+                onClick={() => scrollCarousel("right")}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-10 p-2.5 bg-primary/10 dark:bg-primary/20 backdrop-blur-sm shadow-sm rounded-full flex items-center justify-center border border-primary/20 -mr-2 sm:-mr-4 transition-all hover:bg-primary hover:text-white group/btn"
+                aria-label="Scroll Right"
+              >
+                <FaChevronRight size={14} className="primary_text_color group-hover/btn:text-white" />
+              </button>
+            )}
           </div>
         )}
       </div>
