@@ -261,8 +261,17 @@ const ProviderServiceTab = ({
           </button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-[700px] max-h-[85vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl">
-          <DialogHeader className="p-4 border-b dark:border-gray-800 bg-white dark:bg-[#0F0F0F]">
-            <DialogTitle className="text-lg font-bold mb-4">{t("searchService")}</DialogTitle>
+          <DialogHeader className="p-4 border-b dark:border-gray-800 bg-white dark:bg-[#0F0F0F] relative">
+            <div className="flex items-center justify-between mb-4">
+              <DialogTitle className="text-lg font-bold">{t("searchService")}</DialogTitle>
+              <button
+                onClick={() => setIsSearchModalOpen(false)}
+                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                aria-label={t("close") || "Close"}
+              >
+                <MdClose size={20} className="description_color" />
+              </button>
+            </div>
             <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-white/5 transition-colors duration-200">
               <FaSearch size={14} className="description_color shrink-0" />
               <input
@@ -365,7 +374,7 @@ const ProviderServiceTab = ({
                     />
                   </div>
                   <span className={cn(
-                    "text-[10px] sm:text-xs font-semibold text-center line-clamp-2 px-1 leading-tight",
+                    "text-[12px] sm:text-xs font-semibold text-center line-clamp-2 px-1 leading-tight",
                     activeCategory === cat.name ? "text-white" : "primary_text_color"
                   )}>
                     {cat.name}

@@ -81,7 +81,7 @@ const SubCategoryFloatingMenu = ({ categories, activeCategory, onCategoryClick }
                       imgClassName="w-full h-full object-cover"
                     />
                   </div>
-                  <span className="text-[10px] sm:text-xs font-semibold text-center line-clamp-2 px-1 leading-tight">
+                  <span className="text-[12px] sm:text-xs font-semibold text-center line-clamp-2 px-1 leading-tight">
                     {cat.name}
                   </span>
                 </button>
