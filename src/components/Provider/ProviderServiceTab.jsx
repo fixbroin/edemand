@@ -16,6 +16,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import SubCategoryFloatingMenu from "./SubCategoryFloatingMenu";
 
 const SEARCH_DEBOUNCE_MS = 400;
 
@@ -233,11 +234,22 @@ const ProviderServiceTab = ({
         </div>
       ));
 
+  const isSearchActive = searchTerm.trim().length > 0;
+
   const showInitialSkeleton = isLoadingServices;
   const showEmpty = !showInitialSkeleton && services.length === 0;
 
   return (
     <div className="relative">
+      {/* Floating Subcategory Menu */}
+      {!isSearchActive && categories.length > 1 && (
+        <SubCategoryFloatingMenu
+          categories={categories}
+          activeCategory={activeCategory}
+          onCategoryClick={handleCategoryClick}
+        />
+      )}
+
       {/* Floating Search Button & Dialog */}
       <Dialog open={isSearchModalOpen} onOpenChange={setIsSearchModalOpen}>
         <DialogTrigger asChild>
