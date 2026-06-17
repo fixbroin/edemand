@@ -97,6 +97,7 @@ const Header = () => {
   const isCheckoutPage = pathName === "/checkout";
   const isCartPage = pathName === "/cart";
   const isBecomeProviderPage = pathName === "/become-provider";
+  const isHomePage = pathName === "/" || pathName === "/home";
 
   // Access total item count using the selector
   const totalItems = useSelector(selectTotalItems);
@@ -327,12 +328,14 @@ const Header = () => {
             </div>
 
             {/* Search Icon - Right after location in mobile/tablet */}
-            <div 
-              className="flex xl:hidden items-center ml-4 cursor-pointer p-2 light_bg_color hover:primary_bg_color group rounded-lg transition-all duration-300"
-              onClick={() => setIsSearchModalOpen(true)}
-            >
-              <IoSearchOutline size={20} className="primary_text_color group-hover:text-white transition-colors duration-300" />
-            </div>
+            {isHomePage && (
+              <div
+                className="flex xl:hidden items-center ml-4 cursor-pointer p-2 light_bg_color hover:primary_bg_color group rounded-lg transition-all duration-300"
+                onClick={() => setIsSearchModalOpen(true)}
+              >
+                <IoSearchOutline size={20} className="primary_text_color group-hover:text-white transition-colors duration-300" />
+              </div>
+            )}
 
             {/* Desktop Navigation */}
             <nav className="hidden xl:flex gap-6 text_color items-center">
@@ -346,12 +349,14 @@ const Header = () => {
                 />
               ))}
               {/* Desktop Search Icon - After navigation items */}
-              <div 
-                className="cursor-pointer p-2 light_bg_color hover:primary_bg_color group rounded-full transition-all duration-300"
-                onClick={() => setIsSearchModalOpen(true)}
-              >
-                <IoSearchOutline size={22} className="primary_text_color group-hover:text-white transition-colors duration-300" />
-              </div>
+              {isHomePage && (
+                <div
+                  className="cursor-pointer p-2 light_bg_color hover:primary_bg_color group rounded-full transition-all duration-300"
+                  onClick={() => setIsSearchModalOpen(true)}
+                >
+                  <IoSearchOutline size={22} className="primary_text_color group-hover:text-white transition-colors duration-300" />
+                </div>
+              )}
             </nav>
 
             <div className="hidden xl:flex items-center gap-4">

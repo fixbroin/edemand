@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/router";
 import { useDispatch, useSelector } from "react-redux";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import dayjs from "dayjs";
 import { load as loadCashfree } from "@cashfreepayments/cashfree-js";
@@ -353,13 +353,6 @@ export function useCheckoutLogic({ paymentSectionRef, orderSummaryRef } = {}) {
             .catch(() => { });
     }, [serviceType]);
 
-    // Auto-scroll to payment section when schedule is selected and drawer closes
-    useEffect(() => {
-        if (!scheduleDrawerOpen && dilveryDetails?.dilveryDate && dilveryDetails?.dilveryTime) {
-            paymentSectionRef?.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-        }
-    }, [scheduleDrawerOpen, dilveryDetails?.dilveryDate, dilveryDetails?.dilveryTime, paymentSectionRef]);
-
     // ── Event Handlers ────────────────────────────────────────────────────────
     const handleServiceType = (type) => {
         setServiceType(type);
@@ -383,6 +376,35 @@ export function useCheckoutLogic({ paymentSectionRef, orderSummaryRef } = {}) {
             );
         }
     };
+
+    // ── Automated Checkout Sequence ──────────────────────────────────────────
+
+    // 1. Auto-open Address Drawer when service type is "home" and no address is selected
+    useEffect(() => {
+        if (serviceType === "home" && !dilveryDetails?.dilevryLocation?.id && !addressDrawerOpen) {
+            setAddressDrawerOpen(true);
+        }
+    }, [serviceType, dilveryDetails?.dilevryLocation?.id, addressDrawerOpen]);
+
+    // 2. When address drawer closes, if we have a location but no date/time, open schedule drawer
+    const prevAddressDrawerOpen = useRef(addressDrawerOpen);
+    useEffect(() => {
+        if (prevAddressDrawerOpen.current === true && addressDrawerOpen === false) {
+            if (dilveryDetails?.dilevryLocation?.id && (!dilveryDetails?.dilveryDate || !dilveryDetails?.dilveryTime)) {
+                setTimeout(() => {
+                    setScheduleDrawerOpen(true);
+                }, 400); // Slight delay for smooth UI transition
+            }
+        }
+        prevAddressDrawerOpen.current = addressDrawerOpen;
+    }, [addressDrawerOpen, dilveryDetails?.dilevryLocation, dilveryDetails?.dilveryDate, dilveryDetails?.dilveryTime]);
+
+    // 3. Auto-scroll to payment section when schedule is selected and drawer closes
+    useEffect(() => {
+        if (!scheduleDrawerOpen && dilveryDetails?.dilveryDate && dilveryDetails?.dilveryTime) {
+            paymentSectionRef?.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    }, [scheduleDrawerOpen, dilveryDetails?.dilveryDate, dilveryDetails?.dilveryTime, paymentSectionRef]);
 
     const handleActiveNotes = () => setActiveNotes(true);
 
