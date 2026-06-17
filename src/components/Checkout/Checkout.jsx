@@ -60,6 +60,10 @@ const Checkout = () => {
   const t = useTranslation();
   const customJobData = useSelector(selectCustomJobData);
 
+  // Refs for auto-scrolling
+  const paymentSectionRef = React.useRef(null);
+  const orderSummaryRef = React.useRef(null);
+
   const {
     // State
     serviceType,
@@ -107,7 +111,7 @@ const Checkout = () => {
     handleApply,
     handleRemove,
     handleCheckout,
-  } = useCheckoutLogic();
+  } = useCheckoutLogic({ paymentSectionRef, orderSummaryRef });
 
   const hasAppliedCoupon = appliedCoupon && Object.keys(appliedCoupon).length > 0;
 
@@ -159,17 +163,19 @@ const Checkout = () => {
               />
 
               {/* Payment Methods */}
-              <PaymentMethodSelector
-                enabledMethods={enabledPaymentMethods}
-                onlineCount={onlinePaymentMethodsCount}
-                paymentOption={paymentOption}
-                icons={PAYMENT_METHOD_ICONS}
-                cardIcon={card}
-                codIcon={cod}
-                onSelect={handlePaymentOption}
-                t={t}
-                noMethodsLabel={t("noPaymentMethodsAvailable")}
-              />
+              <div ref={paymentSectionRef}>
+                <PaymentMethodSelector
+                  enabledMethods={enabledPaymentMethods}
+                  onlineCount={onlinePaymentMethodsCount}
+                  paymentOption={paymentOption}
+                  icons={PAYMENT_METHOD_ICONS}
+                  cardIcon={card}
+                  codIcon={cod}
+                  onSelect={handlePaymentOption}
+                  t={t}
+                  noMethodsLabel={t("noPaymentMethodsAvailable")}
+                />
+              </div>
             </div>
           </div>
 
@@ -189,20 +195,22 @@ const Checkout = () => {
             />
 
             {/* Price Breakdown + Checkout Button */}
-            <OrderSummary
-              isCustomJob={isCustomJob}
-              showTax={showTax}
-              taxValue={taxValue}
-              promocodeDiscount={promocodeDiscount}
-              serviceType={serviceType}
-              currentCartProviderData={currentCartProviderData}
-              calculateFinalAmount={calculateFinalAmount}
-              isProcessingCheckout={isProcessingCheckout}
-              paymentOption={paymentOption}
-              isRepayment={isRepayment}
-              onCheckout={handleCheckout}
-              t={t}
-            />
+            <div ref={orderSummaryRef}>
+              <OrderSummary
+                isCustomJob={isCustomJob}
+                showTax={showTax}
+                taxValue={taxValue}
+                promocodeDiscount={promocodeDiscount}
+                serviceType={serviceType}
+                currentCartProviderData={currentCartProviderData}
+                calculateFinalAmount={calculateFinalAmount}
+                isProcessingCheckout={isProcessingCheckout}
+                paymentOption={paymentOption}
+                isRepayment={isRepayment}
+                onCheckout={handleCheckout}
+                t={t}
+              />
+            </div>
           </div>
         </div>
       </section>

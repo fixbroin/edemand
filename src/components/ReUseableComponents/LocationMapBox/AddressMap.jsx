@@ -10,7 +10,7 @@ import { darkThemeStyles, useIsDarkMode } from "@/utils/Helper";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSelector } from "react-redux";
 
-const containerStyle = { width: "100%", height: "100%" };
+const containerStyle = { width: "100%", height: "100%", borderRadius: "8px" };
 
 const AddressMap = ({
     latitude,
@@ -506,7 +506,7 @@ const AddressMap = ({
     return (
         <div className="relative w-full h-full">
             <div
-                className={cn("absolute z-10 w-full p-4 transition-all duration-700", {
+                className={cn("absolute z-20 w-full p-2 sm:p-4 transition-all duration-700", {
                     "top-0 opacity-100": isClicked,
                     "-top-16 opacity-0": !isClicked,
                 })}
@@ -521,7 +521,13 @@ const AddressMap = ({
                         value={searchInput}
                         onChange={handleInputChange}
                         onKeyDown={handleKeyDown}
-                        onFocus={() => setIsInputFocused(true)}
+                        onFocus={() => {
+                            setIsInputFocused(true);
+                            // Ensure the input is visible when keyboard opens on mobile
+                            setTimeout(() => {
+                                inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }, 300);
+                        }}
                         onBlur={() => setTimeout(() => setIsInputFocused(false), 200)}
                     />
 
@@ -572,10 +578,16 @@ const AddressMap = ({
                 zoom={zoom}
                 mapContainerStyle={containerStyle}
                 options={{
-                    fullscreenControl: false,
+                    fullscreenControl: true,
+                    fullscreenControlOptions: {
+                        position: 9, // RIGHT_BOTTOM
+                    },
                     mapTypeControl: false,
                     streetViewControl: false,
                     zoomControl: true,
+                    zoomControlOptions: {
+                        position: 9, // RIGHT_BOTTOM
+                    },
                     styles: isDarkMode ? darkThemeStyles : [],
                 }}
                 onLoad={(mapInstance) => setMap(mapInstance)}

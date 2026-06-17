@@ -51,7 +51,7 @@ import {
 // Hook
 // ---------------------------------------------------------------------------
 
-export function useCheckoutLogic() {
+export function useCheckoutLogic({ paymentSectionRef, orderSummaryRef } = {}) {
     const router = useRouter();
     const { isRepayment } = router.query;
     const dispatch = useDispatch();
@@ -353,6 +353,13 @@ export function useCheckoutLogic() {
             .catch(() => { });
     }, [serviceType]);
 
+    // Auto-scroll to payment section when schedule is selected and drawer closes
+    useEffect(() => {
+        if (!scheduleDrawerOpen && dilveryDetails?.dilveryDate && dilveryDetails?.dilveryTime) {
+            paymentSectionRef?.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    }, [scheduleDrawerOpen, dilveryDetails?.dilveryDate, dilveryDetails?.dilveryTime, paymentSectionRef]);
+
     // ── Event Handlers ────────────────────────────────────────────────────────
     const handleServiceType = (type) => {
         setServiceType(type);
@@ -401,6 +408,11 @@ export function useCheckoutLogic() {
             method: method.methodType,
             provider_id: currentCartProviderData?.provider_id,
         });
+
+        // Auto-scroll to order summary (Book button)
+        setTimeout(() => {
+            orderSummaryRef?.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 100);
     };
 
     const handleApply = async (offer) => {

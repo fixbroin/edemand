@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   changeOrderStatusApi,
   checkSlotsApi,
@@ -63,6 +63,8 @@ const SelectDateAndTimeDrawer = ({
   const [slotsError, setSlotsError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  const timeSlotsRef = useRef(null);
+
   useEffect(() => {
     if (open) {
       logClarityEvent(BOOKING_EVENTS.TIMESLOT_PICKER_OPENED, {
@@ -119,7 +121,15 @@ const SelectDateAndTimeDrawer = ({
   };
 
   useEffect(() => {
-    if (selectedDate) fetchTimeSlots();
+    if (selectedDate) {
+      fetchTimeSlots();
+      // Smooth scroll to time slots section on mobile when date is selected
+      if (window.innerWidth < 1024) {
+        setTimeout(() => {
+          timeSlotsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 100);
+      }
+    }
   }, [selectedDate]);
 
   const handleClose = () => {
@@ -219,13 +229,13 @@ const SelectDateAndTimeDrawer = ({
       <DrawerContent
         className={cn(
           "max-w-full md:max-w-[90%] lg:max-w-[85%] xl:max-w-7xl mx-auto rounded-tr-[18px] rounded-tl-[18px]",
-          "overflow-y-auto",
+          "h-[96vh] overflow-hidden",
           "transition-all duration-300",
           "after:!content-none"
         )}
       >
         <DrawerTitle className="hidden" />
-        <div className="select_date flex flex-col lg:flex-row gap-6 py-4 px-4 md:p-6 lg:p-8">
+        <div className="select_date h-full overflow-y-auto flex flex-col lg:flex-row gap-6 py-4 px-4 md:p-6 lg:p-8 pb-20 md:pb-10">
 
           {/* Left — Calendar */}
           <div className="w-full lg:w-1/2">
@@ -246,7 +256,7 @@ const SelectDateAndTimeDrawer = ({
           </div>
 
           {/* Right — Time Slots */}
-          <div className="w-full lg:w-1/2 flex flex-col">
+          <div className="w-full lg:w-1/2 flex flex-col" ref={timeSlotsRef}>
             {/* Header row: title + date + available count */}
             <div className="flex items-start justify-between mb-3 md:mb-4">
               <div>
@@ -272,7 +282,7 @@ const SelectDateAndTimeDrawer = ({
                 </>
               ) : timeSlots?.length > 0 ? (
                 <>
-                  <div className="time_slots grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-2.5 mb-2 max-h-[320px] md:max-h-[360px] overflow-y-auto pr-1">
+                  <div className="time_slots grid grid-cols-2 md:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-2.5 mb-2 max-h-[500px] overflow-y-visible pr-1">
                     {timeSlots?.map((timeSlot) => {
                       const isFull = timeSlot.is_available === 0;
                       const isSelected = selectedTimeSlot === timeSlot.time;

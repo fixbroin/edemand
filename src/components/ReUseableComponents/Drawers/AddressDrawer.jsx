@@ -364,14 +364,14 @@ const AddressDrawer = ({
           "max-w-full md:max-w-[90%] lg:max-w-[85%] xl:max-w-7xl mx-auto rounded-tr-[18px] rounded-tl-[18px]",
           "transition-all duration-300",
           "after:!content-none",
-          "!h-auto"
+          "h-[96vh] overflow-hidden"
         )}
       >
-        <div className="address w-full flex flex-col lg:flex-row gap-6 py-4 px-4 md:p-6 lg:p-8 xl:p-10">
+        <div className="address w-full h-full overflow-y-auto flex flex-col lg:flex-row gap-6 py-4 px-4 md:p-6 lg:p-8 xl:p-10 pb-20 md:pb-10">
           {/* Left side: Map */}
           <div className="w-full lg:w-1/2">
             <div className="schedule_cal w-full">
-              <div className="w-full rounded-lg overflow-hidden h-[300px] md:h-[350px] lg:h-[650px]">
+              <div className="w-full rounded-lg h-[300px] md:h-[350px] lg:h-[650px]">
                 {isLoaded ? (
                   <>
                     <AddressMap
@@ -391,7 +391,7 @@ const AddressDrawer = ({
           </div>
 
           {/* Right side: Address fields */}
-          <div className="w-full lg:w-1/2 flex flex-col gap-4 md:gap-5 max-h-[80vh] lg:max-h-[650px]">
+          <div className="w-full lg:w-1/2 flex flex-col gap-4 md:gap-5">
             <div className="flex items-center justify-between w-full">
               <h2 className="text-xl md:text-2xl font-bold">
                 {isClicked ? t("addNewAddress") : t("selectAddress")}
@@ -451,8 +451,8 @@ const AddressDrawer = ({
               </div>
             }
 
-            {/* Scrollable fields */}
-            <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-4 min-h-0">
+            {/* Address fields - No internal scroll */}
+            <div className="flex flex-col gap-4">
 
               {/* Mobile */}
               <FormField label={t("mobile")} required>
@@ -546,8 +546,8 @@ const AddressDrawer = ({
               </label>
             </div>
 
-            {/* Sticky submit button */}
-            <div className="flex-shrink-0 pt-3 border-t flex items-center gap-3">
+            {/* submit button */}
+            <div className="pt-3 border-t flex items-center gap-3">
               {/* Clear button */}
               <button
                 onClick={clearForm}
