@@ -39,6 +39,7 @@ const AddressMap = ({
     const [apiError, setApiError] = useState(null); // Track API errors
 
     const inputRef = useRef(null);
+    const scrollYBeforeFocus = useRef(0);
 
     // Default coordinates of user's location
     const DEFAULT_LAT = locationData?.lat;
@@ -366,6 +367,15 @@ const AddressMap = ({
         setIsSelecting(true); // Mark as selecting to prevent API call
         setIsLoading(true); // Show loading state while fetching details
 
+        // Blur input and clear suggestions immediately to dismiss keyboard and dropdown
+        if (inputRef.current) {
+            inputRef.current.blur();
+        }
+        setIsInputFocused(false);
+        setPlaceSuggestions([]);
+        setSearchInput("");
+        setActiveIndex(-1);
+
         try {
             const placeDetailsRes = await getPlacesDetailsForWebApi({
                 place_id: place?.place_id,
@@ -430,12 +440,6 @@ const AddressMap = ({
                 };
 
                 onLocationChange(updateData);
-
-                setSearchInput("");
-                setPlaceSuggestions([]);
-                setActiveIndex(-1);
-                inputRef.current?.blur();
-                setIsInputFocused(false);
                 setApiError(null);
             }
         } catch (error) {
@@ -522,13 +526,22 @@ const AddressMap = ({
                         onChange={handleInputChange}
                         onKeyDown={handleKeyDown}
                         onFocus={() => {
+                            if (typeof window !== "undefined") {
+                                scrollYBeforeFocus.current = window.scrollY || document.documentElement.scrollTop;
+                            }
                             setIsInputFocused(true);
-                            // Ensure the input is visible when keyboard opens on mobile
-                            setTimeout(() => {
-                                inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                            }, 300);
                         }}
-                        onBlur={() => setTimeout(() => setIsInputFocused(false), 200)}
+                        onBlur={() => {
+                            setTimeout(() => {
+                                setIsInputFocused(false);
+                                // Restore window scroll position after keyboard closes to prevent layout shifting
+                                if (typeof window !== "undefined") {
+                                    window.scrollTo(0, scrollYBeforeFocus.current);
+                                    // Force layout recalculation (triggers drawer height adjustment)
+                                    window.dispatchEvent(new Event('resize'));
+                                }
+                            }, 250);
+                        }}
                     />
 
                     {/* 🆕 Updated dropdown with same logic as SearchLocationBox */}

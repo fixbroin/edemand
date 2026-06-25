@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
-import { Drawer, DrawerContent } from "@/components/ui/drawer";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { MdClose } from "react-icons/md";
 import { cn } from "@/lib/utils";
 import { useGoogleMapsLoader, useRTL } from "@/utils/Helper";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -358,16 +359,23 @@ const AddressDrawer = ({
     );
 
   return (
-    <Drawer open={open} onClose={handleClose} closeOnClickOutside={false}>
-      <DrawerContent
+    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) handleClose(); }}>
+      <DialogContent
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
         className={cn(
-          "max-w-full md:max-w-[90%] lg:max-w-[85%] xl:max-w-7xl mx-auto rounded-tr-[18px] rounded-tl-[18px]",
+          "max-w-full md:max-w-[90%] lg:max-w-[85%] xl:max-w-7xl mx-auto rounded-[18px] sm:rounded-[18px] md:rounded-[18px] lg:rounded-[18px]",
           "transition-all duration-300",
-          "after:!content-none",
-          "h-[96vh] overflow-hidden"
+          "h-[92vh] md:h-[90vh] lg:h-[95vh] max-h-none overflow-hidden p-0 border-none"
         )}
       >
-        <div className="address w-full h-full overflow-y-auto flex flex-col lg:flex-row gap-6 py-4 px-4 md:p-6 lg:p-8 xl:p-10 pb-20 md:pb-10">
+        <button
+          onClick={handleClose}
+          className="absolute right-4 top-4 z-[50] p-2 rounded-full hover:opacity-80 transition-opacity text-black dark:text-white"
+        >
+          <MdClose size={24} />
+        </button>
+        <div className="address w-full h-full overflow-y-auto flex flex-col lg:flex-row gap-6 py-4 px-4 md:p-6 lg:p-8 xl:p-10  ">
           {/* Left side: Map */}
           <div className="w-full lg:w-1/2">
             <div className="schedule_cal w-full">
@@ -391,7 +399,7 @@ const AddressDrawer = ({
           </div>
 
           {/* Right side: Address fields */}
-          <div className="w-full lg:w-1/2 flex flex-col gap-4 md:gap-5">
+          <div className="w-full lg:w-1/2 flex flex-col h-full">
             <div className="flex items-center justify-between w-full">
               <h2 className="text-xl md:text-2xl font-bold">
                 {isClicked ? t("addNewAddress") : t("selectAddress")}
@@ -555,7 +563,8 @@ const AddressDrawer = ({
               >
                 {t("clear") || "Clear"}
               </button>
-
+{/* Bottom scroll spacing */}
+<div className="h-24 lg:h-40"></div>
               {/* Continue button */}
               {isLoading ? (
                 <button className="primary_bg_color primary_text_color py-3 px-8 rounded-xl flex-1 flex items-center justify-center">
@@ -572,12 +581,13 @@ const AddressDrawer = ({
                 >
                   {t("continue")}
                 </button>
+                
               )}
             </div>
           </div>
         </div>
-      </DrawerContent>
-    </Drawer>
+      </DialogContent>
+    </Dialog>
   );
 };
 

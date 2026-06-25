@@ -64,6 +64,7 @@ const SelectDateAndTimeDrawer = ({
   const [isLoading, setIsLoading] = useState(false);
 
   const timeSlotsRef = useRef(null);
+  const hasUserSelectedDate = useRef(false);
 
   useEffect(() => {
     if (open) {
@@ -71,6 +72,7 @@ const SelectDateAndTimeDrawer = ({
         provider_id: providerId,
         custom_job_id: customJobId,
       });
+      hasUserSelectedDate.current = false;
     }
   }, [open, providerId, customJobId]);
 
@@ -124,7 +126,7 @@ const SelectDateAndTimeDrawer = ({
     if (selectedDate) {
       fetchTimeSlots();
       // Smooth scroll to time slots section on mobile when date is selected
-      if (window.innerWidth < 1024) {
+      if (hasUserSelectedDate.current && window.innerWidth < 1024) {
         setTimeout(() => {
           timeSlotsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
         }, 100);
@@ -143,6 +145,7 @@ const SelectDateAndTimeDrawer = ({
     setSelectedTimeSlotMessage(null);
     setCustomTime(null);
     setIsCustomTimeSelected(false);
+    hasUserSelectedDate.current = false;
   };
 
   const changeOrderStatus = async () => {
@@ -244,7 +247,10 @@ const SelectDateAndTimeDrawer = ({
               <Calendar
                 mode="single"
                 selected={selectedDate.toDate()}
-                onSelect={(date) => setSelectedDate(dayjs(date))}
+                onSelect={(date) => {
+                  hasUserSelectedDate.current = true;
+                  setSelectedDate(dayjs(date));
+                }}
                 showOutsideDays={true}
                 disabled={{
                   before: new Date(),
