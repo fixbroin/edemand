@@ -41,8 +41,8 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }) {
       showOutsideDays={showOutsideDays}
       className={cn("p-3 w-full", className)}
       classNames={{
-        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 overflow-auto pb-[20px]",
-        month: "space-y-6", // Increased spacing between months
+        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0 pb-[20px] w-full",
+        month: "space-y-6 w-full", // Increased spacing between months
         caption: "flex justify-center pt-2 relative items-center w-full",
         caption_label: "text-sm font-medium",
         nav: "space-x-1 flex items-center",
@@ -53,14 +53,14 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }) {
         nav_button_previous: "absolute left-1",
         nav_button_next: "absolute right-1",
         table: "w-full border-collapse space-y-2", // Adjust table spacing
-        head_row: "flex",
+        head_row: "flex w-full justify-between",
         head_cell:
-          "text-muted-foreground rounded-md w-9 sm:w-14 font-normal text-[1rem]", // Larger text
-        row: "flex w-full mt-3",
-        cell: "h-9 sm:h-14 w-9 sm:w-14 text-center text-lg p-1 relative rounded-full focus-within:relative focus-within:z-20", // Larger cells
+          "text-muted-foreground rounded-md w-[14.28%] max-w-[56px] font-normal text-[1rem] flex items-center justify-center", // Fluid width
+        row: "flex w-full mt-3 justify-between",
+        cell: "aspect-square w-[14.28%] max-w-[56px] text-center text-lg p-1 relative rounded-full focus-within:relative focus-within:z-20 flex items-center justify-center", // Fluid cell width and aspect-square
         day: cn(
           buttonVariants({ variant: "ghost" }),
-          "h-9 sm:h-14 w-9 sm:w-14 p-0 font-medium rounded-full" // Larger day buttons
+          "aspect-square h-full w-full max-w-[56px] p-0 font-medium rounded-full flex items-center justify-center" // Fluid day buttons
         ),
         day_range_end: "day-range-end",
         day_selected: "primary_bg_color text-white hover:bg-primary hover:text-white", // Custom color
