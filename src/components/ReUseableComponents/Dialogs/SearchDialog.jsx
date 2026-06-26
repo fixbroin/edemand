@@ -209,7 +209,7 @@ const SearchDialog = ({ isOpen, onClose }) => {
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent 
-                className="sm:max-w-[650px] p-0 overflow-hidden border-none shadow-2xl flex flex-col h-[85vh] card_bg"
+                className="sm:max-w-[750px] md:max-w-[850px] lg:max-w-[950px] xl:max-w-[1100px] w-full p-0 overflow-hidden border-none shadow-2xl flex flex-col h-[85vh] card_bg"
                 style={{ top: "7%", transform: "translate(-50%, 0)" }}
             >
                 <DialogHeader className="p-4 border-b flex flex-row items-center justify-between space-y-0 flex-shrink-0">
@@ -373,7 +373,9 @@ const SearchDialog = ({ isOpen, onClose }) => {
                                                                 breakpoints={{
                                                                     320: { slidesPerView: 1 },
                                                                     480: { slidesPerView: 1.1 },
-                                                                    600: { slidesPerView: 1.2 }
+                                                                    600: { slidesPerView: 1.2 },
+                                                                    768: { slidesPerView: 1.5 },
+                                                                    1024: { slidesPerView: 2 }
                                                                 }}
                                                                 dir={isRTL ? "rtl" : "ltr"}
                                                                 key={isRTL}
@@ -397,7 +399,7 @@ const SearchDialog = ({ isOpen, onClose }) => {
                                                             </Swiper>
                                                         </div>
                                                     ) : (
-                                                        <div className="grid grid-cols-1 gap-4">
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                             {service?.provider?.services.map(
                                                                 (svcItem, idx) => (
                                                                     <div key={idx}>
@@ -426,7 +428,7 @@ const SearchDialog = ({ isOpen, onClose }) => {
                             ) : (
                                 <div className="flex flex-col gap-4">
                                     {shouldShowProviderSkeleton ? (
-                                        <div className="grid grid-cols-1 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                             {[...Array(limit)].map((_, index) => (
                                                 <NearbyProviderCardSkeleton key={index} />
                                             ))}
@@ -439,7 +441,7 @@ const SearchDialog = ({ isOpen, onClose }) => {
                                             />
                                         </div>
                                     ) : providersData?.length > 0 ? (
-                                        <div className="grid grid-cols-1 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                                             {providersData.map((provider, index) => (
                                                 <CustomLink
                                                     key={index}
