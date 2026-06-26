@@ -75,7 +75,6 @@ const SearchDialog = ({ isOpen, onClose }) => {
     const [searchQuery, setSearchQuery] = useState("");
     const [searchKey, setSearchKey] = useState("");
     const [activeTabType, setActiveTabType] = useState("service");
-    const [isSearchingLocal, setIsSearchingLocal] = useState(false);
 
     const swiperRef = useRef(null);
     const locationData = useSelector((state) => state?.location);
@@ -88,6 +87,21 @@ const SearchDialog = ({ isOpen, onClose }) => {
             setSearchKey("");
         }
     }, [isOpen]);
+
+    // Debounce search query to search key for instant search-as-you-type
+    useEffect(() => {
+        const trimmedQuery = searchQuery.trim();
+        if (!trimmedQuery) {
+            setSearchKey("");
+            return;
+        }
+
+        const delayDebounceFn = setTimeout(() => {
+            setSearchKey(trimmedQuery);
+        }, 400); // 400ms delay before triggering search query
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [searchQuery]);
 
     const {
         data,
@@ -182,7 +196,6 @@ const SearchDialog = ({ isOpen, onClose }) => {
             return;
         }
 
-        setIsSearchingLocal(true);
         setSearchKey(trimmedQuery);
         
         logClarityEvent(HOME_EVENTS.SERVICE_SEARCH_SUBMITTED, {
@@ -190,8 +203,6 @@ const SearchDialog = ({ isOpen, onClose }) => {
             source: "header_dialog_inline",
             target_tab: activeTabType,
         });
-        
-        setIsSearchingLocal(false);
     };
 
     const handleViewAll = (slug, tab) => {
@@ -238,10 +249,9 @@ const SearchDialog = ({ isOpen, onClose }) => {
                         </div>
                         <button 
                             type="submit"
-                            disabled={isSearchingLocal}
-                            className="ml-3 primary_bg_color text-white px-6 py-3 rounded-xl font-medium hover:opacity-90 transition-opacity flex items-center gap-2 text-sm disabled:opacity-50"
+                            className="ml-3 primary_bg_color text-white px-6 py-3 rounded-xl font-medium hover:opacity-90 transition-opacity flex items-center gap-2 text-sm"
                         >
-                            {isSearchingLocal ? <MiniLoader /> : t("search")}
+                            {isFetching && !isFetchingNextPage ? <MiniLoader /> : t("search")}
                         </button>
                     </form>
                 </div>
