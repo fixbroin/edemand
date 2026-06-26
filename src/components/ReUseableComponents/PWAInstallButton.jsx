@@ -1,267 +1,280 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import Cookies from 'js-cookie';
+import { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
+import { useRouter } from 'next/router';
 import { useTranslation } from '../Layout/TranslationContext';
-import { MdClose, MdGetApp } from 'react-icons/md';
+import { Download, X, Share, PlusSquare, Smartphone } from 'lucide-react';
+import useIsMobile from '@/hooks/isMobile';
+import CustomImageTag from './CustomImageTag';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
-/**
- * PWA Install Button Component
- * Shows an install button when the PWA is installable but not yet installed
- * Only displays on mobile devices (iOS, Android) when NEXT_PUBLIC_ENABLE_PWA is true
- * Respects user preferences via cookies
- */
-export default function PWAInstallButton() {
+const PWAInstallButton = () => {
   const t = useTranslation();
+  const router = useRouter();
+  const pathname = router.pathname;
+  const isMobile = useIsMobile();
+
   const [installPrompt, setInstallPrompt] = useState(null);
-  const [isInstalled, setIsInstalled] = useState(false);
-  const [isIOS, setIsIOS] = useState(false);
-  const [isSafari, setIsSafari] = useState(false);
-  const [showIOSGuide, setShowIOSGuide] = useState(false);
-  const [isMobileDevice, setIsMobileDevice] = useState(false);
-  const [isPwaEnabled, setIsPwaEnabled] = useState(false);
-  const [showInstallButton, setShowInstallButton] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const containerRef = useRef(null);
+  const [isMounted, setIsMounted] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(false);
+  const [isAppInstalled, setIsAppInstalled] = useState(false);
+  const [showIosGuide, setShowIosInstruction] = useState(false);
+  const [isIos, setIsIos] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
 
+  const DISMISS_KEY = 'pwa_install_prompt_dismissed_v2';
+  const INSTALLED_KEY = 'pwa_installed_v2';
+
+  const settings = useSelector(
+    (state) => state.settingsData?.settings?.web_settings
+  );
+  const appTitle = settings?.web_title || process.env.NEXT_PUBLIC_APP_NAME || "FixBro";
+  const appIcon = settings?.web_half_logo || "/android-chrome-192x192.png";
+
+  const appInfo = {
+    name: `${appTitle} App`,
+    desc: "Faster booking & real-time updates"
+  };
+
+  if (pathname.startsWith('/admin')) {
+    appInfo.name = `${appTitle} Admin`;
+    appInfo.desc = "Manage orders & providers";
+  } else if (pathname.startsWith('/provider')) {
+    appInfo.name = `${appTitle} Provider`;
+    appInfo.desc = "Manage your jobs & earnings";
+  }
+
+  // 1. Core initialization and event listener
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
-        setIsExpanded(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('touchstart', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
-    };
-  }, []);
-
-  // Cookie names for tracking user preferences
-  const PWA_DISMISSED_COOKIE = 'pwa_install_dismissed';
-  const PWA_INSTALLED_COOKIE = 'pwa_installed';
-
-  useEffect(() => {
-    // Check if PWA feature is enabled via env variable
-    const pwaEnabled = process.env.NEXT_PUBLIC_PWA_ENABLED === 'true';
-    setIsPwaEnabled(pwaEnabled);
-
-    // If PWA is not enabled, don't continue
-    if (!pwaEnabled) return;
-
-    if (typeof window === 'undefined') return;
-
-    // Check for cookies first
-    const dismissedByUser = Cookies.get(PWA_DISMISSED_COOKIE) === 'true';
-    const installedCookie = Cookies.get(PWA_INSTALLED_COOKIE) === 'true';
-
-    if (dismissedByUser || installedCookie) {
-      setShowInstallButton(false);
-      return;
+    setIsMounted(true);
+    
+    // Check if dismissed before
+    if (localStorage.getItem(DISMISS_KEY) === 'true') {
+      setIsDismissed(true);
+    }
+    
+    // Check standalone mode
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                        window.navigator.standalone === true;
+    if (isStandalone || localStorage.getItem(INSTALLED_KEY) === 'true') {
+      setIsAppInstalled(true);
     }
 
-    // Browser detection
-    const userAgent = navigator.userAgent;
-    // Check for iOS device
-    const isIOSDevice =
-      /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
-    setIsIOS(isIOSDevice);
+    // Check iOS
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    setIsIos(/iphone|ipad|ipod/.test(userAgent));
 
-    // Check if user is on Safari (required for iOS PWA installation)
-    const isSafariBrowser = /^((?!chrome|android).)*safari/i.test(userAgent);
-    setIsSafari(isSafariBrowser);
-
-    // Check if the device is mobile (Android or iOS)
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-      userAgent
-    );
-    setIsMobileDevice(isMobile);
-
-    // Check if the app is already installed
-    const checkInstalled = () => {
-      if (window.matchMedia('(display-mode: standalone)').matches) {
-        setIsInstalled(true);
-        Cookies.set(PWA_INSTALLED_COOKIE, 'true', { expires: 30 }); // Set cookie for 30 days
-        return true;
-      }
-
-      // Also check for window-controls-overlay mode (Windows PWA)
-      if (window.matchMedia('(display-mode: window-controls-overlay)').matches) {
-        setIsInstalled(true);
-        Cookies.set(PWA_INSTALLED_COOKIE, 'true', { expires: 30 }); // Set cookie for 30 days
-        return true;
-      }
-
-      return false;
-    };
-
-    checkInstalled();
-
-    // Listen for the beforeinstallprompt event (not supported on iOS)
     const handleBeforeInstallPrompt = (e) => {
-      // Only store the event if it's a mobile device
-      if (isMobile) {
-        // Prevent Chrome 67 and earlier from automatically showing the prompt
-        e.preventDefault();
-        // Store the event for later use
-        setInstallPrompt(e);
-        // Show the install button
-        setShowInstallButton(true);
-      }
+      e.preventDefault();
+      setInstallPrompt(e);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-    window.addEventListener('appinstalled', () => {
-      setIsInstalled(true);
-      Cookies.set(PWA_INSTALLED_COOKIE, 'true', { expires: 30 }); // Set cookie for 30 days
-      setShowInstallButton(false);
-    });
-
-    // For iOS devices, always show the button once per session
-    if (isIOSDevice && !dismissedByUser && !installedCookie) {
-      setShowInstallButton(true);
-    }
+    const handleAppInstalled = () => {
+      setIsAppInstalled(true);
+      localStorage.setItem(INSTALLED_KEY, 'true');
+    };
+    window.addEventListener('appinstalled', handleAppInstalled);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', () => {
-        setIsInstalled(true);
-        Cookies.set(PWA_INSTALLED_COOKIE, 'true', { expires: 30 });
-      });
+      window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
 
-  const handleInstallClick = async () => {
-    if (isIOS) {
-      // Show iOS installation guide
-      setShowIOSGuide(true);
-    } else if (installPrompt) {
-      // Show the install prompt for non-iOS devices
-      const promptEvent = installPrompt;
-      promptEvent.prompt();
-
-      // Wait for the user to respond to the prompt
-      const choiceResult = await promptEvent.userChoice;
-
-      if (choiceResult.outcome === 'accepted') {
-        // User accepted the install prompt
-        Cookies.set(PWA_INSTALLED_COOKIE, 'true', { expires: 30 });
-      } else {
-        // User dismissed the install prompt
-        Cookies.set(PWA_DISMISSED_COOKIE, 'true', { expires: 7 }); // Set for 7 days
-      }
-
-      // Clear the saved prompt since it can't be used again
-      setInstallPrompt(null);
-      setShowInstallButton(false);
-    } else {
-      alert(
-        'Installation prompt not available. Please try again later or check if the app is already installed.'
-      );
+  // 2. Timer logic for minimizing the mobile banner
+  useEffect(() => {
+    if (!isMounted || isAppInstalled || isDismissed || isMinimized || !isMobile) return;
+    
+    // Banner is visible, start the 10s countdown to move it to the side
+    if (installPrompt || isIos) {
+        const timer = setTimeout(() => {
+            setIsMinimized(true);
+        }, 10000);
+        return () => clearTimeout(timer);
     }
+  }, [isMounted, isAppInstalled, isDismissed, isMobile, installPrompt, isIos, isMinimized]);
+
+  const handleInstallClick = async (e) => {
+    e.stopPropagation();
+    
+    if (isIos && !isAppInstalled) {
+        setShowIosInstruction(true);
+        return;
+    }
+
+    if (!installPrompt) return;
+
+    await installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setIsAppInstalled(true);
+      localStorage.setItem(INSTALLED_KEY, 'true');
+    }
+    setInstallPrompt(null);
+  };
+  
+  const handleDismiss = (e) => {
+    e.stopPropagation();
+    setIsDismissed(true);
+    localStorage.setItem(DISMISS_KEY, 'true');
   };
 
-  // Close button handler
-  const handleCloseButton = () => {
-    Cookies.set(PWA_DISMISSED_COOKIE, 'true', { expires: 7 }); // Set cookie for 7 days
-    setShowInstallButton(false);
-  };
-
-  // Close iOS guide and set cookie
-  const handleCloseIOSGuide = () => {
-    setShowIOSGuide(false);
-    Cookies.set(PWA_DISMISSED_COOKIE, 'true', { expires: 7 }); // Set cookie for 7 days
-  };
-
-  // Don't render anything if:
-  // 1. PWA is not enabled via env variable
-  // 2. The app is already installed
-  // 3. It's not a mobile device
-  // 4. User has dismissed the prompt
-  if (!isPwaEnabled || isInstalled || !isMobileDevice || !showInstallButton) {
+  if (!isMounted || isAppInstalled || isDismissed) {
     return null;
   }
 
-  // Show install button based on our state which respects cookies
-  return (
-    <>
-      <div ref={containerRef} className="fixed right-0 rtl:left-0 rtl:right-auto top-1/2 -translate-y-1/2 z-50">
-        {/* Container expands automatically to the left on hover or click */}
-        <div 
-          className="group flex items-center card_bg shadow-[-4px_4px_15px_rgb(0,0,0,0.12)] p-1 ltr:pr-0 rtl:pl-0 rounded-l-full rtl:rounded-r-full rtl:rounded-l-none border border-r-0 border-gray-200 dark:border-gray-800 cursor-pointer overflow-hidden transition-shadow hover:shadow-[-6px_6px_20px_rgb(0,0,0,0.15)]"
-          onClick={() => {
-            if (!isExpanded) setIsExpanded(true);
-          }}
-        >
-          
-          <button
-            onClick={(e) => {
-              if (!isExpanded) {
-                e.preventDefault();
-                setIsExpanded(true);
-              } else {
-                handleInstallClick();
-              }
-            }}
-            className="flex items-center primary_bg_color text-white shadow-sm rounded-l-full rtl:rounded-r-full rtl:rounded-l-none transition-all active:scale-95 hover:opacity-90 font-medium text-sm"
-            aria-label={`${t("install")} ${process.env.NEXT_PUBLIC_APP_NAME}`}
-          >
-            {/* The Icon is always fixed size */}
-            <div className="w-10 h-10 flex shrink-0 items-center justify-center rounded-full">
-              <MdGetApp size={22} />
-            </div>
+  // Only show if we have a prompt (Android/Chrome) OR if it's iOS (for manual guide)
+  if (!installPrompt && !isIos) {
+      return null;
+  }
 
-            {/* The text has max-width transition */}
-            <div className={`transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap flex items-center ${isExpanded ? 'max-w-[250px] opacity-100' : 'max-w-0 opacity-0 group-hover:max-w-[250px] group-hover:opacity-100'}`}>
-              <span className="ltr:pr-5 rtl:pl-5 block">
-                {isIOS ? t("addToHomeScreen") : `${t("install")} ${process.env.NEXT_PUBLIC_APP_NAME}`}
-              </span>
-            </div>
-          </button>
-
-          {/* Close button with max-width transition */}
-          {/* <div className={`transition-all duration-500 ease-in-out flex items-center overflow-hidden ${isExpanded ? 'max-w-[50px] opacity-100' : 'max-w-0 opacity-0 group-hover:max-w-[50px] group-hover:opacity-100'}`}>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleCloseButton();
-              }}
-              className="w-8 h-8 flex shrink-0 items-center justify-center text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-slate-700 rounded-full transition-all focus:outline-none ml-1 mr-1"
-              aria-label={t("close")}
+  // --- MOBILE UI (Banner -> Floating Badge) ---
+  if (isMobile) {
+      return (
+        <>
+            {/* LARGE BANNER (Initial State) */}
+            <div 
+                className={`fixed bottom-20 left-4 right-4 z-[100] transition-all duration-700 ease-in-out transform ${
+                    isMinimized 
+                    ? 'opacity-0 translate-y-20 pointer-events-none scale-50' 
+                    : 'opacity-100 translate-y-0 scale-100'
+                }`}
             >
-              <MdClose size={18} />
-            </button>
-          </div> */}
+                <div className="bg-card border-2 border-primary/20 shadow-2xl rounded-2xl p-4 flex items-center gap-4 relative">
+                    <button 
+                        onClick={handleDismiss}
+                        className="absolute -top-2 -right-2 bg-muted text-muted-foreground rounded-full p-1 hover:bg-destructive hover:text-destructive-foreground transition-colors border"
+                    >
+                        <X size={14} />
+                    </button>
+
+                    <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 border overflow-hidden">
+                        <CustomImageTag src={appIcon} alt="App Icon" className="w-10 h-10" imgClassName="rounded-lg shadow-sm object-cover" />
+                    </div>
+
+                    <div className="flex-grow min-w-0">
+                        <h4 className="text-sm font-bold text-foreground">Install {appInfo.name}</h4>
+                        <p className="text-[10px] text-muted-foreground line-clamp-1">{appInfo.desc}</p>
+                    </div>
+
+                    <Button size="sm" onClick={handleInstallClick} className="rounded-full px-5 font-bold shadow-lg shadow-primary/20 primary_bg_color text-white">
+                        {isIos ? "Setup" : "Install"}
+                    </Button>
+                </div>
+            </div>
+
+            {/* MINIMIZED SIDE BADGE (After 10 Seconds) */}
+            <div 
+                onClick={handleInstallClick}
+                className={`fixed top-[40%] right-0 z-[100] transition-all duration-700 ease-in-out transform flex items-center bg-primary text-white shadow-2xl rounded-l-xl p-2 cursor-pointer ${
+                    isMinimized 
+                    ? 'opacity-100 translate-x-0' 
+                    : 'opacity-0 translate-x-20 pointer-events-none'
+                }`}
+            >
+                <div className="flex flex-col items-center gap-1">
+                    <Download size={18} className="animate-bounce" />
+                    <span className="text-[10px] font-bold uppercase tracking-tighter [writing-mode:vertical-lr] rotate-180">Install</span>
+                </div>
+                
+                <button 
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleDismiss(e);
+                    }}
+                    className="absolute -top-2 -left-2 bg-destructive text-white rounded-full p-0.5 border-2 border-white shadow-md"
+                >
+                    <X size={10} />
+                </button>
+            </div>
+
+            {/* iOS Installation Guide */}
+            <Dialog open={showIosGuide} onOpenChange={setShowIosInstruction}>
+                <DialogContent className="max-w-[90vw] rounded-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-black dark:text-white">
+                            <Smartphone className="h-5 w-5 text-primary" />
+                            {t("installOnIOS") || "Install on iPhone"}
+                        </DialogTitle>
+                        <DialogDescription className="text-left pt-2 text-gray-500 dark:text-gray-400">
+                            {t("installOnIOSDescription") || "To install the app on your iPhone, follow these simple steps:"}
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="space-y-4 py-4 text-black dark:text-white">
+                        <div className="flex items-start gap-3">
+                            <div className="bg-primary/10 p-2 rounded-lg text-primary font-bold text-xs">1</div>
+                            <p className="text-sm">
+                              {t("installOnIOSDescription1") || "Tap the Share button in Safari footer."}
+                              <span className="font-bold inline-flex items-center bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded gap-1 ml-1 text-xs text-gray-800 dark:text-gray-200">
+                                <Share size={14} /> Share
+                              </span>
+                            </p>
+                        </div>
+                        <div className="flex items-start gap-3">
+                            <div className="bg-primary/10 p-2 rounded-lg text-primary font-bold text-xs">2</div>
+                            <p className="text-sm">
+                              {t("installOnIOSDescription2") || "Scroll down and tap Add to Home Screen."}
+                              <span className="font-bold inline-flex items-center bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded gap-1 ml-1 text-xs text-gray-800 dark:text-gray-200">
+                                <PlusSquare size={14} /> Add to Home Screen
+                              </span>
+                            </p>
+                        </div>
+                        <div className="flex items-start gap-3">
+                            <div className="bg-primary/10 p-2 rounded-lg text-primary font-bold text-xs">3</div>
+                            <p className="text-sm">
+                              {t("installOnIOSDescription3") || "Tap Add in the top right corner."}
+                            </p>
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button onClick={() => setShowIosInstruction(false)} className="w-full rounded-xl primary_bg_color text-white">
+                          {t("gotIt") || "Got it!"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
+      );
+  }
+
+  // --- DESKTOP FLOATING TAB UI ---
+  return (
+    <div
+      className="group fixed top-1/2 right-0 -translate-y-1/2 z-[100] flex items-center bg-card border-y border-l border-primary/20 shadow-2xl rounded-l-2xl cursor-pointer transition-all duration-500 ease-out w-12 hover:w-48 h-16 overflow-hidden"
+      onClick={handleInstallClick}
+    >
+      <div className="flex items-center w-full h-full p-2.5">
+        <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shrink-0 shadow-lg shadow-primary/30 group-hover:rotate-12 transition-transform">
+            <Download className="h-5 w-5 text-white" />
+        </div>
+        
+        <div className="ml-3 transition-all duration-500 opacity-0 group-hover:opacity-100 whitespace-nowrap">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-primary">Desktop App</p>
+          <p className="text-xs font-bold text-foreground">Install {appTitle}</p>
         </div>
       </div>
 
-      {/* iOS Installation Guide Modal */}
-      {showIOSGuide && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="max-w-md rounded-lg bg-white text-black p-6 shadow-xl">
-            <h3 className="mb-4 text-lg font-bold">{t("installOnIOS")}</h3>
-            <p className="mb-4">{t("installOnIOSDescription")}</p>
-            <ol className="mb-4 ml-5 list-decimal space-y-2">
-              <li>{t("installOnIOSDescription1")}</li>
-              <li>{t("installOnIOSDescription2")}</li>
-              <li>{t("installOnIOSDescription3")}</li>
-            </ol>
-            {!isSafari && (
-              <p className="mb-4 text-red-500">
-                {t("installOnIOSDescription4")}
-              </p>
-            )}
-            <button
-              onClick={handleCloseIOSGuide}
-              className="w-full rounded-md primary_bg_color py-2 text-white"
-            >
-              {t("close")}
-            </button>
-          </div>
-        </div>
-      )}
-    </>
+      <button
+          onClick={handleDismiss}
+          className="absolute top-1 right-1 h-4 w-4 rounded-full bg-muted text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-white flex items-center justify-center"
+        >
+          <X size={10} />
+      </button>
+    </div>
   );
-} 
+};
+
+export default PWAInstallButton;
