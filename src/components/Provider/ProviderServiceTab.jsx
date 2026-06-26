@@ -17,6 +17,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import SubCategoryFloatingMenu from "./SubCategoryFloatingMenu";
+import { useSelector } from "react-redux";
+import { selectLoginModalOpen } from "@/redux/reducers/helperSlice";
 
 const SEARCH_DEBOUNCE_MS = 400;
 
@@ -42,6 +44,15 @@ const ProviderServiceTab = ({
   const [isSearching, setIsSearching] = useState(false);
   const [activeCategory, setActiveCategory] = useState(null);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+
+  const isLoginModalOpen = useSelector(selectLoginModalOpen);
+
+  // Close search dialog if login modal is opened to prevent nested modal hangs
+  useEffect(() => {
+    if (isLoginModalOpen && isSearchModalOpen) {
+      setIsSearchModalOpen(false);
+    }
+  }, [isLoginModalOpen, isSearchModalOpen]);
 
   const requestIdRef = useRef(0);
   const debouncedTermRef = useRef("");
@@ -251,7 +262,7 @@ const ProviderServiceTab = ({
       )}
 
       {/* Floating Search Button & Dialog */}
-      <Dialog open={isSearchModalOpen} onOpenChange={setIsSearchModalOpen}>
+      <Dialog open={isSearchModalOpen} onOpenChange={setIsSearchModalOpen} modal={false}>
         <DialogTrigger asChild>
           <button
             className="fixed top-20 right-6 sm:right-10 z-[60] w-14 h-14 primary_bg_color text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95 group"
@@ -260,7 +271,10 @@ const ProviderServiceTab = ({
             <FaSearch size={20} className="group-hover:rotate-12 transition-transform" />
           </button>
         </DialogTrigger>
-        <DialogContent className="sm:max-w-[700px] max-h-[85vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl">
+        <DialogContent 
+          className="sm:max-w-[700px] h-[80vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl"
+          style={{ top: "10%", transform: "translate(-50%, 0)" }}
+        >
           <DialogHeader className="p-4 border-b dark:border-gray-800 bg-white dark:bg-[#0F0F0F] relative">
             <div className="flex items-center justify-between mb-4">
               <DialogTitle className="text-lg font-bold">{t("searchService")}</DialogTitle>
