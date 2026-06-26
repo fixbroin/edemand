@@ -209,8 +209,8 @@ const SearchDialog = ({ isOpen, onClose }) => {
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent 
-                className="sm:max-w-[650px] p-0 overflow-hidden border-none shadow-2xl flex flex-col max-h-[85vh] card_bg"
-                style={{ top: "10%", transform: "translate(-50%, 0)" }}
+                className="sm:max-w-[650px] p-0 overflow-hidden border-none shadow-2xl flex flex-col h-[85vh] card_bg"
+                style={{ top: "7%", transform: "translate(-50%, 0)" }}
             >
                 <DialogHeader className="p-4 border-b flex flex-row items-center justify-between space-y-0 flex-shrink-0">
                     <DialogTitle className="text-lg font-semibold">{t("searchService")}</DialogTitle>
@@ -247,8 +247,16 @@ const SearchDialog = ({ isOpen, onClose }) => {
                 </div>
 
                 {/* Results Panel */}
-                {searchKey && (
-                    <div className="flex-1 overflow-y-auto p-6 bg-gray-50/50 dark:bg-gray-900/30 flex flex-col gap-4">
+                <div className="flex-1 overflow-y-auto p-6 bg-gray-50/50 dark:bg-gray-900/30 flex flex-col gap-4">
+                    {!searchKey ? (
+                        <div className="flex-1 flex flex-col items-center justify-center text-center p-6">
+                            <IoSearchOutline size={48} className="text-gray-300 dark:text-gray-700 mb-3" />
+                            <p className="text-sm text-gray-400 dark:text-gray-500 font-sans">
+                                {t("pleaseTypeServiceOrProviderName")}
+                            </p>
+                        </div>
+                    ) : (
+                        <>
                         {/* Header metadata and tab selectors */}
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-shrink-0">
                             <div>
@@ -469,8 +477,9 @@ const SearchDialog = ({ isOpen, onClose }) => {
                                     </button>
                                 </div>
                             )}
-                    </div>
-                )}
+                        </>
+                    )}
+                </div>
             </DialogContent>
         </Dialog>
     );
