@@ -459,15 +459,17 @@ const Search = () => {
                                   className="custom-swiper"
                                 >
                                   {service?.provider?.services.map(
-                                    (service, index) => {
+                                    (svcItem, index) => {
                                       return (
                                         <SwiperSlide key={index}>
                                           <ProviderDetailsServiceCard
-                                            slug={service?.provider_slug}
-                                            data={service}
+                                            slug={svcItem?.provider_slug}
+                                            provider={service?.provider}
+                                            data={svcItem}
                                             compnayName={
                                               translatedCompanyName
                                             }
+                                            hideCart={true}
                                           />
                                         </SwiperSlide>
                                       )
@@ -478,13 +480,15 @@ const Search = () => {
                             ) : (
                               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                 {service?.provider?.services.map(
-                                  (service, index) => {
+                                  (svcItem, index) => {
                                     return (
                                       <div key={index}>
                                         <ProviderDetailsServiceCard
-                                          slug={service?.provider_slug}
-                                          data={service}
+                                          slug={svcItem?.provider_slug}
+                                          provider={service?.provider}
+                                          data={svcItem}
                                           compnayName={translatedCompanyName}
+                                          hideCart={true}
                                         />
                                       </div>
                                     )

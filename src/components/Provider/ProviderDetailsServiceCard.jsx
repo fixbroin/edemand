@@ -27,7 +27,7 @@ import useIsMobile from "@/hooks/isMobile";
 import { useRouter } from "next/navigation";
 import { openLoginModal } from "@/redux/reducers/helperSlice";
 
-const ProviderDetailsServiceCard = ({ slug, provider, data, compnayName, isDisabled }) => {
+const ProviderDetailsServiceCard = ({ slug, provider, data, compnayName, isDisabled, hideCart }) => {
 
   const router = useRouter();
   const t = useTranslation();
@@ -253,9 +253,11 @@ const ProviderDetailsServiceCard = ({ slug, provider, data, compnayName, isDisab
                 imgClassName="rounded-lg"
               />
             </CustomLink>
-            <div className="w-full">
-              {renderQuantityControls()}
-            </div>
+            {!hideCart && (
+              <div className="w-full">
+                {renderQuantityControls()}
+              </div>
+            )}
           </div>
         </div>
 
@@ -313,12 +315,14 @@ const ProviderDetailsServiceCard = ({ slug, provider, data, compnayName, isDisab
             </div>
           </div>
 
-          {/* Right: Cart Controls */}
-          <div className="flex flex-col items-center justify-center pl-4 w-32 lg:w-40 border-l border-gray-100 dark:border-gray-800 self-stretch">
-            <div className="w-full">
-              {renderQuantityControls()}
+          {!hideCart && (
+            /* Right: Cart Controls */
+            <div className="flex flex-col items-center justify-center pl-4 w-32 lg:w-40 border-l border-gray-100 dark:border-gray-800 self-stretch">
+              <div className="w-full">
+                {renderQuantityControls()}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 

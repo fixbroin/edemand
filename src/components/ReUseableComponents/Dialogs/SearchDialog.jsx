@@ -18,7 +18,7 @@ import { HOME_EVENTS } from "@/constants/clarityEventNames";
 
 // Redux & API
 import { useSelector, useDispatch } from "react-redux";
-import { setActiveTab } from "@/redux/reducers/helperSlice";
+import { selectLoginModalOpen, setActiveTab } from "@/redux/reducers/helperSlice";
 import { search_services_providers } from "@/api/apiRoutes";
 
 // Tanstack Query
@@ -78,6 +78,7 @@ const SearchDialog = ({ isOpen, onClose }) => {
 
     const swiperRef = useRef(null);
     const locationData = useSelector((state) => state?.location);
+    const isLoginModalOpen = useSelector(selectLoginModalOpen);
     const limit = 6;
 
     // Reset search query state when popup is opened or closed
@@ -87,6 +88,13 @@ const SearchDialog = ({ isOpen, onClose }) => {
             setSearchKey("");
         }
     }, [isOpen]);
+
+    // Close search dialog if login modal is opened to prevent nested modal hangs
+    useEffect(() => {
+        if (isLoginModalOpen && isOpen) {
+            onClose();
+        }
+    }, [isLoginModalOpen, isOpen, onClose]);
 
     // Debounce search query to search key for instant search-as-you-type
     useEffect(() => {
@@ -400,8 +408,10 @@ const SearchDialog = ({ isOpen, onClose }) => {
                                                                         <SwiperSlide key={idx}>
                                                                             <ProviderDetailsServiceCard
                                                                                 slug={svcItem?.provider_slug}
+                                                                                provider={service?.provider}
                                                                                 data={svcItem}
                                                                                 compnayName={translatedCompanyName}
+                                                                                hideCart={true}
                                                                             />
                                                                         </SwiperSlide>
                                                                     )
@@ -415,8 +425,10 @@ const SearchDialog = ({ isOpen, onClose }) => {
                                                                     <div key={idx}>
                                                                         <ProviderDetailsServiceCard
                                                                             slug={svcItem?.provider_slug}
+                                                                            provider={service?.provider}
                                                                             data={svcItem}
                                                                             compnayName={translatedCompanyName}
+                                                                            hideCart={true}
                                                                         />
                                                                     </div>
                                                                 )
